@@ -1,0 +1,151 @@
+{% load static %}
+{% load socialaccount %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sign In - CloudSync</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{% static 'css/common.css' %}">
+    <link rel="stylesheet" href="{% static 'css/signin_page.css' %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<main class="auth-wrapper">
+
+    <!-- LEFT -->
+    <section class="auth-left">
+
+        
+
+        <div class="logoarea">
+            <div class="logoimage">
+                <img src="{% static 'images/cloud.png' %}" alt="logoimage">
+            </div>
+            <div class="logotext">CloudSync</div>
+
+        </div>
+      
+
+        <div class="role-toggle">
+            <button type="button" class="role-btn" data-role="admin">Admin</button>
+            <button type="button" class="role-btn" data-role="user">User</button>
+        </div>
+
+        <div class="signin-box">
+
+            <h1 class="signinheading">Welcome back!</h1>
+            <p class="signinsubheading">
+                Sign in to access your files and folders
+            </p>
+
+            <form method="POST">
+                {% csrf_token %}
+
+                {% if messages %}
+                {% for message in messages %}
+                {% if message.level == 40 %}
+                    <div {% if message.tags %} class="{{ message.tags }} "{% endif %}>{{ message }}</div>
+                {% endif %}
+                {% endfor %}
+                {% endif %}
+
+                <input type="hidden" name="role" value="{{ prefill.role }}" id="selectedRole">
+
+                <label class='label'>User Id</label><span class="requiredfieldastrick">*</span>
+                <input class='input' type="text" name="username" value="{{ prefill.username }}" placeholder="user@gmail.com" required>
+
+                <label class='label'>Password</label><span class="requiredfieldastrick">*</span>
+                <div class="password-wrap">
+                    <input type="password" class='input' id="signinpassword" value="{{ prefill.password }}" name="password" placeholder="***********" required>
+                    <img id="passviewbtn" src="{% static 'images/viewpassword_icon.png' %}" alt="">
+                </div>
+
+                <div class="login-options">
+                    <label class="remember">
+                        <input type="checkbox" name="remember_me"> Remember me
+                    </label>
+                    <a href="#" class="forgot">Forgot password?</a>
+                </div>
+
+                <button class="signinbtn">Sign In</button>
+
+            </form>
+
+            <div class="divider">
+                <span>or continue with</span>
+            </div>
+
+            <a href="{% provider_login_url 'google' %}" class="google-btn">
+                <img src="{% static 'images/google_logo.webp' %}">
+                Sign in with Google
+            </a>
+
+            <p class="signup-text">
+                Don't have an account?
+                <a href="{% url 'accounts:signup_page' %}">Sign up for free</a>
+            </p>
+
+        </div>
+    </section>
+
+    <!-- RIGHT -->
+    <section class="auth-right">
+        <img src="{% static 'images/Frame.png' %}" alt="Description of image">        
+    </section>
+
+</main>
+
+<script src="{% static 'js/signin_page.js' %}"></script>
+
+<script>
+    const signinpassword = document.getElementById("signinpassword");
+    const passviewbtn = document.getElementById("passviewbtn");
+    
+    passviewbtn.addEventListener('click',()=>{
+        const src1 = "{% static 'images/viewpassword_icon.png' %}";
+        const src2 = "{% static 'images/hidepassword_icon.png' %}";
+
+        
+        if (passviewbtn.classList.contains("viewpass")){
+            signinpassword.type = "text";
+            passviewbtn.src = src2;
+            passviewbtn.classList.remove("viewpass");
+        }
+        else{
+            signinpassword.type = "password";
+            passviewbtn.src = src1;
+            passviewbtn.classList.add("viewpass");
+            
+        }
+    })
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const roleButtons = document.querySelectorAll(".role-btn");
+        const roleInput = document.getElementById("selectedRole");
+
+        // 1️⃣ Restore role from backend (prefill)
+        const currentRole = roleInput.value || "user";
+
+        roleButtons.forEach(btn => {
+            if (btn.dataset.role === currentRole) {
+                btn.classList.add("active");
+            } else {
+                btn.classList.remove("active");
+            }
+
+            // 2️⃣ Handle click change
+            btn.addEventListener("click", () => {
+                roleButtons.forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                roleInput.value = btn.dataset.role;
+            });
+        });
+    });
+</script>
+
+</body>
+</html>

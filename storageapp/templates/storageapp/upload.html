@@ -1,0 +1,168 @@
+{% extends 'storageapp/base.html' %}
+{% load static %}
+
+{% block title %}Upload - Cloudsync{% endblock %}
+
+{% block style %}
+    <link rel="stylesheet" href="{% static 'css/upload.css' %}">
+{% endblock %}
+
+{% block content %}
+<h2 class="page-title">Upload Files</h2>
+<p class="page-subtitle">Drag and drop your files or browse to upload</p>
+
+<div class="upload-box" id="dropZone">
+    <div class="upload-icon">☁️</div>
+    <h3>Drag and drop files here</h3>
+    <p>Or click the button below to browse the files</p>
+
+    <button class="browse-btn" onclick="document.getElementById('fileInput').click()">
+        Browse Files
+    </button>
+
+    <input type="file" id="fileInput" name="file" multiple hidden>
+
+</div>
+   
+    <div class="upload-list" id="uploadList">
+    {% for file in last_uploads %}
+    <div class="upload-row">
+
+        <!-- LEFT -->
+        <div class="upload-left">
+            <div class="file-icon">
+                
+                    <img src="{% static 'images/checkmark.png' %}" alt="image">
+                
+            </div>
+
+            <div>
+                <div class="file-name">{{ file.file_name }}</div>
+                <div class="file-size">{{ file.file_size|filesizeformat }}</div>
+            </div>
+        </div>
+
+        <!-- RIGHT -->
+        <div class="upload-right">
+            <span class="status-text completed">Completed</span>
+            <span class="check">✔</span>
+        </div>
+
+        <!-- PROGRESS BAR -->
+        <div class="bar completed">
+            <div class="bar-fill" style="width:100%;"></div>
+        </div>
+
+    </div>
+{% empty %}
+    <p style="color:#6b7280;">No recent uploads</p>
+{% endfor %}
+</div>
+    <form id="uploadForm" method="POST" enctype="multipart/form-data">
+
+        {% csrf_token %}
+        
+    </form>
+
+    {% if error %}
+        <p style="color:red;">{{ error }}</p>
+    {% endif %}
+
+    {% comment %} <a href="https://res.cloudinary.com/diyp8u3jr/raw/upload/v1767987558/videos/VID-20250630-WA0000.mp4" download>Download File</a> {% endcomment %}
+
+
+
+
+{% endblock %}
+
+
+
+{% block script %}
+
+<script>
+const input = document.getElementById("fileInput");
+const uploadList = document.getElementById("uploadList");
+const csrfToken = "{{ csrf_token }}";
+
+input.addEventListener("change", () => {
+    [...input.files].forEach(uploadFile);
+});
+
+function uploadFile(file) {
+    const row = document.createElement("div");
+    row.className = "upload-row uploading";
+
+    let iconUrl = "{% static 'images/server.png' %}";
+
+    row.innerHTML = `
+        <div class="upload-left">
+            <img class="file-icon" src="${iconUrl}" alt="file">
+            <div>
+                <div class="file-name">${file.name}</div>
+                <div class="file-size">${(file.size / 1024 / 1024).toFixed(1)} MB</div>
+            </div>
+        </div>
+
+        <div class="upload-right">
+            <span class="status-text">Uploading…</span>
+            <img src="{% static 'images/close.png' %}" class="cancel-btn">
+        </div>
+
+        <div class="bar">
+            <div class="bar-fill"></div>
+        </div>
+    `;
+
+    uploadList.prepend(row);
+
+    const bar = row.querySelector(".bar-fill");
+    const status = row.querySelector(".status-text");
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", "{% url 'storageapp:upload_page' %}");
+    xhr.setRequestHeader("X-CSRFToken", csrfToken);
+
+    xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+            const percent = (e.loaded / e.total) * 100;
+            bar.style.width = percent + "%";
+        }
+    };
+
+    xhr.onload = () => {
+        if (xhr.status === 200) {
+            row.classList.remove("uploading");
+            row.classList.add("completed");
+            bar.style.width = "100%";
+            status.innerHTML = "Completed";
+            cancelBtn.style.display = "none";
+            // show check mark
+            row.querySelector(".check").classList.remove("hidden");
+
+            // change left icon to tick
+            row.querySelector(".file-icon").src = "{% static 'images/checkmark.png' %}";
+        } else {
+            row.classList.add("error");
+            status.innerHTML = "Failed";
+        }
+    };
+
+    const cancelBtn = row.querySelector(".cancel-btn");
+
+    cancelBtn.addEventListener("click", () => {
+        xhr.abort();  // ❌ stops upload immediately
+        row.classList.add("cancelled");
+        status.innerText = "Cancelled";
+        bar.style.background = "#ef4444";
+    });
+
+    xhr.send(formData);
+}
+</script>
+
+
+
+{% endblock %}

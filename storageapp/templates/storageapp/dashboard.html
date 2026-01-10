@@ -1,0 +1,151 @@
+{% extends 'storageapp/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Dashboard - Cloudsync{% endblock %}
+
+{% block style %}
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<h2 class="dashboard-title">Dashboard</h2>
+<p class="dashboard-subtitle">
+    Welcome back! Here's what's happening with your storage.
+</p>
+
+<!-- ===== STORAGE CARDS ===== -->
+<div class="storage-cards">
+
+    <!-- Documents -->
+    <div class="card">
+        <div class="card-icon purple">
+            <img src="{% static 'images/adobe.png' %}">
+        </div>
+        <h4>Documents</h4>
+        <p>{{ cards.documents.count }} files</p>
+        <strong>{{ cards.documents.size|filesizeformat }}</strong>
+        <a href="{% url 'storageapp:myfiles' %}?type=document">View all →</a>
+    </div>
+
+    <!-- Images -->
+    <div class="card">
+        <div class="card-icon violet">
+            <img src="{% static 'images/image.png' %}" alt="Video">
+        </div>
+        <h4>Images</h4>
+        <p>{{ cards.images.count }} files</p>
+        <strong>{{ cards.images.size|filesizeformat }}</strong>
+        <a href="{% url 'storageapp:myfiles' %}?type=image">View all →</a>
+    </div>
+
+    <!-- Videos -->
+    <div class="card">
+        <div class="card-icon pink">
+            
+            <img src="{% static 'images/video.png' %}" alt="Video">
+        </div>
+        <h4>Videos</h4>
+        <p>{{ cards.videos.count }} files</p>
+        <strong>{{ cards.videos.size|filesizeformat }}</strong>
+        <a href="{% url 'storageapp:myfiles' %}?type=video">View all →</a>
+    </div>
+
+    <!-- Others -->
+    <div class="card">
+        <div class="card-icon orange">
+            <img src="{% static 'images/file.png' %}" alt="Video">
+        </div>
+        <h4>Others</h4>
+        <p>{{ cards.others.count }} files</p>
+        <strong>{{ cards.others.size|filesizeformat }}</strong>
+        <a href="{% url 'storageapp:myfiles' %}?type=other">View all →</a>
+    </div>
+
+</div>
+
+<!-- ===== RECENT FILES ===== -->
+<div class="recent-header">
+    <h3>Recent Files</h3>
+    <a href="{% url 'storageapp:myfiles' %}">View all</a>
+</div>
+
+<div class="recent-grid">
+    {% for file in recent_files %}
+    <div class="recent-card" id="file-{{ file.id }}">
+
+        <div class="recent-icon {{ file.file_type }}">
+            {% if file.file_type == "image" %}
+                <img src="{% static 'images/image.png' %}" alt="Image">
+            {% elif file.file_type == "video" %}
+                <img src="{% static 'images/video.png' %}" alt="Video">
+            {% elif file.file_type == "document" %}
+                <img src="{% static 'images/adobe.png' %}" alt="Document">
+            {% else %}
+                <img src="{% static 'images/file.png' %}" alt="Other">
+            {% endif %}
+        </div>
+
+        <div class="recent-info">
+            <h5>{{ file.file_name }}</h5>
+            <p>
+                {{ file.file_type|capfirst }} • {{ file.file_size|filesizeformat }}
+            </p>
+            <small>{{ file.uploaded_at|naturaltime }}</small>
+        </div>
+
+        <div class="recent-actions">
+            <a href="{{ file.file_url }}" target="_blank" class="icon-btn download" title="Download">
+                <img src="{% static 'images/download.png' %}" alt="">
+            </a>
+
+            <button class="icon-btn share" title="Share"
+                onclick="navigator.clipboard.writeText('{{ file.file_url }}')">
+                <img src="{% static 'images/shareicon.png' %}" alt="">
+            </button>
+            <button 
+                class="icon-btn trash"
+                title="Move to Trash"
+                onclick="moveToTrash('{{ file.id }}')">
+                <img src="{% static 'images/trash.png' %}" alt="">
+            </button>
+        </div>
+
+        
+
+    </div>
+    {% endfor %}
+</div>
+
+{% endblock %}
+
+
+{% block script %}
+<script>
+function moveToTrash(fileId) {
+    if (!confirm("Move this file to Trash?")) return;
+
+    fetch(`/user/file/${fileId}/trash/`, {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": "{{ csrf_token }}",
+            "Content-Type": "application/json"
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            // remove card from UI
+            document.getElementById(`file-${fileId}`).remove();
+        } else {
+            alert("Failed to move file");
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert("Error occurred");
+    });
+}
+</script>
+{% endblock %}

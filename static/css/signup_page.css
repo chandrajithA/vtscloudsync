@@ -1,0 +1,191 @@
+/* ================= ROOT ================= */
+
+.auth-wrapper {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+
+/* ================= LEFT ================= */
+.auth-left {
+    padding: clamp(20px, 5vw, 60px);
+    display: grid;
+    grid-template-rows: auto 1fr;
+}
+
+.logoarea{
+    display: flex; 
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 40px;
+}
+
+.logoarea .logoimage{
+    background:linear-gradient(to bottom, #742BFA, #A43AF0);
+    padding: 7px; 
+    border-radius: 10px;
+}
+
+.logoarea .logotext{
+    background-image: linear-gradient(to bottom, #742BFA, #A43AF0);
+  
+    /* Clip the background to the shape of the text */
+    background-clip: text;
+    -webkit-background-clip: text; /* Vendor prefix for compatibility */
+  
+    /* Make the text transparent so the background shows through */
+    color: transparent;
+    -webkit-text-fill-color: transparent; /* Vendor prefix for compatibility */
+
+    font-size: clamp(20px, 2.5vw, 26px);
+    font-weight: 550;
+}
+
+
+
+
+/* Signin card */
+.signin-box {
+    max-width: 420px;
+    align-self: center;
+    margin: auto;
+}
+
+/* Headings */
+.signinheading {
+    font-size: clamp(18px, 3vw, 26px);
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+
+
+/* Inputs */
+.label {
+    font-size: clamp(14px, 2vw, 16px);
+    font-weight: 500;
+}
+
+.input {
+    width: 100%;
+    padding: 14px;
+    margin: 10px 0 20px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    font-size: clamp(14px, 2vw, 16px);
+}
+
+.password-wrap {
+    position: relative;
+}
+
+.password-wrap img {
+    position: absolute;
+    right: 14px;
+    top: 45%;
+    transform: translateY(-45%);
+    width: 22px;
+    cursor: pointer;
+}
+
+/* Options */
+.login-options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: clamp(13px, 2vw, 15px);
+    margin-bottom: 25px;
+}
+
+.forgot {
+    color: var(--blue);
+    text-decoration: none;
+}
+
+/* Button */
+.signinbtn {
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    border: none;
+    font-size: clamp(16px, 2.5vw, 18px);
+    font-weight: 600;
+    background: linear-gradient(135deg, #742bfa, #a43af0);
+    color: var(--white);
+    cursor: pointer;
+}
+
+/* Divider */
+.divider {
+    text-align: center;
+    margin: 25px 0;
+    font-size: clamp(13px, 2vw, 15px);
+    color: var(--grey);
+}
+
+/* Google */
+.google-btn {
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid var(--grey);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: clamp(14px, 2vw, 16px);
+    background: var(--white);
+    cursor: pointer;
+}
+
+.google-btn img {
+    width: 22px;
+}
+
+/* Signup */
+.signup-text {
+    margin-top: 20px;
+    font-size: clamp(13px, 2vw, 15px);
+    text-align: center;
+}
+
+.signup-text a {
+    color: var(--blue);
+    font-weight: 500;
+}
+
+/* ================= RIGHT ================= */
+.auth-right {
+    background-image: url("/static/images/cloud_login.png");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;   /* 🔥 THIS IS KEY */
+}
+
+.auth-right img{
+    height: 100%;
+    width:100%;
+    object-fit:fill; 
+    display: block;
+}
+
+
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 900px) {
+    .auth-wrapper {
+        grid-template-columns: 1fr;
+    }
+
+    .auth-right {
+        display: none;
+    }
+
+    .auth-left {
+        place-items: center;
+    }
+
+    .signin-box {
+        width: 100%;
+    }
+}

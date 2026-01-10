@@ -1,0 +1,191 @@
+{% load static %}
+{% load socialaccount %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sign Up - CloudSync</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{% static 'css/common.css' %}">
+    <link rel="stylesheet" href="{% static 'css/signup_page.css' %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<main class="auth-wrapper">
+
+    <!-- LEFT -->
+    <section class="auth-left">
+
+        
+
+        <div class="logoarea">
+            <div class="logoimage">
+                <img src="{% static 'images/cloud.png' %}" alt="logoimage">
+            </div>
+            <div class="logotext">CloudSync</div>
+
+        </div>
+      
+
+       
+
+        <div class="signin-box">
+
+            <p class="signinheading">Register Free with CloudSync</p>
+                    
+
+                    <form method="POST">
+                        {% csrf_token %}
+
+                        <label for="signupusername" class='label'>Full Name</label><span class="requiredfieldastrick">*</span>
+                        <div class="signiniconrelativearea">
+                            <input type="text" class="input" name="name" value="{{ prefill.name }}" placeholder="Enter full name" required autocomplete="on">
+                        </div>                   
+                        {% if messages %}
+                        {% for message in messages %}
+                        {% if message.level == 40 and "Name" in message.message %}
+                            <div {% if message.tags %} class="{{ message.tags }} "{% endif %}>{{ message }}</div>
+                        {% endif %}
+                        {% endfor %}
+                        {% endif %}
+                        <label for="signupphoneno" class='label'>Phone</label><span class="requiredfieldastrick">*</span>
+                        <div class="signiniconrelativearea">
+                            <input type="tel" class="input" name="phone" value="{{ prefill.phone }}" placeholder="Enter phone number" required autocomplete="on">
+                        </div>
+                        {% if messages %}
+                        {% for message in messages %}
+                        {% if message.level == 40 and "Phone number" in message.message %}
+                            <div {% if message.tags %} class="{{ message.tags }} "{% endif %}>{{ message }}</div>
+                        {% endif %}
+                        {% endfor %}
+                        {% endif %}
+                        <label for="signupemail" class='label'>Email</label><span class="requiredfieldastrick">*</span>
+                        <div class="signiniconrelativearea">
+                            <input type="email" class="input" name="email" value="{{ prefill.email }}" placeholder="Enter email id" required autocomplete="on">
+                        </div>
+                        {% if messages %}
+                        {% for message in messages %}
+                        {% if message.level == 40 and "Email ID" in message.message %}
+                            <div {% if message.tags %} class="{{ message.tags }} "{% endif %}>{{ message }}</div>
+                        {% endif %}
+                        {% endfor %}
+                        {% endif %}
+
+                        <label for="signupuserid" class='label'>User ID</label><span class="requiredfieldastrick">*</span>
+                        <div class="signiniconrelativearea">
+                            <input type="text" class="input" name="userid" value="{{ prefill.userid }}" placeholder="Enter User ID" required autocomplete="on">
+                        </div>                   
+                        {% if messages %}
+                        {% for message in messages %}
+                        {% if message.level == 40 and "User ID" in message.message %}
+                            <div {% if message.tags %} class="{{ message.tags }} "{% endif %}>{{ message }}</div>
+                        {% endif %}
+                        {% endfor %}
+                        {% endif %}
+
+                        <label for="signuppass" class='label'>Password</label><span class="requiredfieldastrick">*</span>
+                        <div class="signiniconrelativearea password-wrap">
+                            <input type="password" class="input" name="password" id="signuppass" value="{{ prefill.password }}" placeholder="Enter password" required autocomplete="off">
+                            <img class="abssigninicons viewpass" id="passviewbtn" src="{% static 'images/viewpassword_icon.png' %}" alt="password view and hide icon">
+                        </div>
+                        {% if messages %}
+                        {% for message in messages %}
+                        {% if message.level == 40 and "Password " in message.message %}
+                            <div {% if message.tags %} class="{{ message.tags }} "{% endif %}>{{ message }}</div>
+                        {% endif %}
+                        {% endfor %}
+                        {% endif %}
+                        <label for="signupconfirmpass" class='label'>Confirm Password</label><span class="requiredfieldastrick">*</span>
+                        <div class="signiniconrelativearea password-wrap">
+                            <input type="password" class="input" name="confirm_password" id="signupconfirmpass" value="{{ prefill.confirmpassword }}" placeholder="Enter confirm password" required autocomplete="off">
+                            <img class="abssigninicons viewpass" id="confirmpassviewbtn" src="{% static 'images/viewpassword_icon.png' %}" alt="password view and hide icon">
+                        </div> 
+                        {% if messages %}
+                        {% for message in messages %}
+                        {% if message.level == 40 and "Confirm Passwords" in message.message %}
+                            <div {% if message.tags %} class="{{ message.tags }} "{% endif %}>{{ message }}</div>
+                        {% endif %}
+                        {% endfor %}
+                        {% endif %}
+
+                        <button class="signinbtn">Sign Up</button>
+                        
+                    </form>
+
+            <div class="divider">
+                <span>or continue with</span>
+            </div>
+
+            <a href="{% provider_login_url 'google' %}" class="google-btn">
+                <img src="{% static 'images/google_logo.webp' %}">
+                Sign in with Google
+            </a>
+
+            <p class="signup-text">
+                Already have an account?
+                <a href="{% url 'accounts:signin_page' %}">Sign In</a>
+            </p>
+
+        </div>
+    </section>
+
+    <!-- RIGHT -->
+    <section class="auth-right">
+        <img src="{% static 'images/Frame.png' %}" alt="Description of image">        
+    </section>
+
+</main>
+
+<script> 
+
+            
+            const signuppass = document.getElementById("signuppass");
+            const signupconfirmpass = document.getElementById("signupconfirmpass");
+            const passviewbtn = document.getElementById("passviewbtn");
+            const confirmpassviewbtn = document.getElementById("confirmpassviewbtn");
+            
+
+            passviewbtn.addEventListener('click',()=>{
+                const src1 = "{% static 'images/viewpassword_icon.png' %}";
+                const src2 = "{% static 'images/hidepassword_icon.png' %}";
+
+               
+                if (passviewbtn.classList.contains("viewpass")){
+                    signuppass.type = "text";
+                    passviewbtn.src = src2;
+                    passviewbtn.classList.remove("viewpass");
+                }
+                else{
+                    signuppass.type = "password";
+                    passviewbtn.src = src1;
+                    passviewbtn.classList.add("viewpass");
+                    
+                }
+            })
+
+            confirmpassviewbtn.addEventListener('click',()=>{
+                const src1 = "{% static 'images/viewpassword_icon.png' %}";
+                const src2 = "{% static 'images/hidepassword_icon.png' %}";
+
+                
+                if (confirmpassviewbtn.classList.contains("viewconfirmpass")){
+                    signupconfirmpass.type = "text";
+                    confirmpassviewbtn.src = src2;
+                    confirmpassviewbtn.classList.remove("viewconfirmpass");
+                }
+                else{
+                    signupconfirmpass.type = "password";
+                    confirmpassviewbtn.src = src1;
+                    confirmpassviewbtn.classList.add("viewconfirmpass");
+                }
+            })
+
+        
+                 
+    </script>
+
+</body>
+</html>

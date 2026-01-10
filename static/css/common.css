@@ -1,0 +1,77 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Roboto', sans-serif;
+}
+
+:root {
+  --white:#ffffff;
+  --red:red;
+  --blue:#742BFA;
+  --violet:#A43AF0;
+  --grey:#7A7A7A;
+  --lightgrey:#f1f1f1;
+  --bordergrey:#d0d0d0;
+  --black:#000000;
+
+}
+
+body {
+    background: var(--white);
+    color: var(--black);
+    
+}
+
+html{
+    min-width: 320px;
+    scroll-behavior: smooth;
+}
+
+a{
+    text-decoration: none;
+}
+
+.requiredfieldastrick {
+  color: var(--red);
+  margin-left: 4px;
+  cursor: none;
+}
+
+
+.absolute.error{
+    position: absolute;
+    top: -2%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--red);
+    color: var(--white);
+    padding: 10px;
+    font-size: 18px;
+    z-index: 1001;
+}
+
+.absolute.success{
+    position: absolute;
+    top: -2%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--mid-green);
+    color: var(--white);
+    padding: 10px;
+    font-size: 18px;
+    z-index: 1001;
+}
+
+.error{
+    color: var(--red);
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+.success{
+     text-align:center;
+     color:var(--green);
+     font-size:16px;
+     margin-bottom: 10px;
+}

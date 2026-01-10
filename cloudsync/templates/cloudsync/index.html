@@ -1,0 +1,361 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CloudSync</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{% static 'css/common.css' %}">
+    <link rel="stylesheet" href="{% static 'css/index.css' %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- ================= HEADER ================= -->
+<header class="header" id="header">
+    <div class="container nav">
+        <div class="logoarea">
+            <div class="logoimage">
+                <img src="{% static 'images/cloud.png' %}" alt="logoimage">
+            </div>
+            <div class="logotext">CloudSync</div>
+
+        </div>
+        
+
+        <nav class="nav-links">
+            <a class="active" href="#header">Home</a>
+            <a href="#subscription">Subscription</a>
+            <a href="#footer">Contact</a>
+        </nav>
+
+        <div class="nav-actions">
+            
+            <a href="{% url 'accounts:signin_page' %}" class="login-btn">Login</a>
+        </div>
+    </div>
+</header>
+
+<!-- ================= HERO ================= -->
+<section class="hero">
+    <img src="{% static 'images/heroimage.png' %}" alt="Description of image">
+    <div class="container hero-content">
+        <div class="hero-text">
+            <h1>Store, Sync, share – All in one secure cloud</h1>
+            <p>
+                Access your files anytime, anywhere. CloudSync keeps your data safe,
+                organized, and instantly available across all your devices.
+            </p>
+            <div class="hero-buttons">
+                <a href="{% url 'accounts:signup_page' %}" class="primary-btn">Get Started for free</a>
+                <a class="secondary-btn">Book a Demo</a>
+            </div> 
+  
+        </div>  
+        
+    </div>
+</section>
+
+<!-- ================= WHY CHOOSE US ================= -->
+<section class="section">
+    <h2 class="section-title">Why Choose Us?</h2>
+    <p class="subtitle">"Everything You Need to Stay Connected"</p>
+
+    <div class="cards">
+
+        <div class="card">
+            <div class="icon-box gradient-1">
+                <img src="{% static 'images/heroimage.png' %}" alt="">
+            </div>
+            <h3>Seamless Syncing</h3>
+            <p>Instantly sync your files across devices.</p>
+        </div>
+
+        <div class="card">
+            <div class="icon-box gradient-2">
+                <img src="{% static 'images/heroimage.png' %}" alt="">
+            </div>
+            <h3>Version History</h3>
+            <p>Restore or review older versions anytime.</p>
+        </div>
+
+        <div class="card">
+            <div class="icon-box gradient-3">
+                <img src="{% static 'images/heroimage.png' %}" alt="">
+            </div>
+            <h3>Fast Uploads</h3>
+            <p>Lightning-speed transfers.</p>
+        </div>
+
+        <div class="card">
+            <div class="icon-box gradient-4">
+                <img src="{% static 'images/heroimage.png' %}" alt="">
+            </div>
+            <h3>Smart Collaboration</h3>
+            <p>Share, comment, and work together in real-time.</p>
+        </div>
+
+        <div class="card">
+            <div class="icon-box gradient-5">
+                <img src="{% static 'images/heroimage.png' %}" alt="">
+            </div>
+            <h3>End-to-End Security</h3>
+            <p>Your data stays encrypted and private.</p>
+        </div>
+
+        <div class="card">
+            <div class="icon-box gradient-6">
+                <img src="{% static 'images/heroimage.png' %}" alt="">
+            </div>
+            <h3>Organized Storage</h3>
+            <p>Auto-sort photos, videos, and documents.</p>
+        </div>
+
+    </div>
+</section>
+
+<!-- ================= HOW IT WORKS ================= -->
+<section class="how-it-works">
+    <h2>How It Works ?</h2>
+    <p class="subtitle">
+        It is a long established fact that a reader will be distracted by the readable
+        content of a page when looking at its layout.
+    </p>
+
+    <div class="steps-container">
+
+        <div class="step">
+            <div class="icon-box">
+                <img src="{% static 'images/user.png' %}" alt="Sign Up">
+            </div>
+            <h3>1.Sign Up</h3>
+            <p>Create your free account in seconds</p>
+        </div>
+
+       
+        <div class="step">
+            <div class="icon-box">
+                <img src="{% static 'images/cloud.png' %}" alt="Upload">
+            </div>
+            <h3>2.Upload</h3>
+            <p>Drag & drop files or use the Upload button.</p>
+        </div>
+
+        
+
+        <div class="step">
+            <div class="icon-box">
+                <img src="{% static 'images/globe.png' %}" alt="Access Anywhere">
+            </div>
+            <h3>3.Access From Any Where</h3>
+            <p>Open or share files on any device.</p>
+        </div>
+
+    </div>
+</section>
+
+
+<!-- ================= PRICING ================= -->
+<section class="pricing-section" id="subscription">
+    <h2 class="pricing-title">Choose Your plan</h2>
+    <p class="pricing-subtitle">
+        Flexible plans for personal and Business needs
+    </p>
+
+    <div class="pricing-cards">
+
+        <!-- Free -->
+        <div class="pricing-card">
+            <h3 class="plan-name">Free</h3>
+            <h1 class="storage">10 GB</h1>
+
+            <ul class="features">
+                <li>Basic Sharing</li>
+                <li>File Preview</li>
+            </ul>
+
+            <button onclick="window.location.href='{% url 'accounts:signup_page' %}'" class="btn-outline">Get Free</button>
+        </div>
+
+        <!-- Pro (Featured) -->
+        <div class="pricing-card">
+            <h3 class="plan-name">Pro</h3>
+            <h1 class="storage">100 GB</h1>
+
+            <ul class="features">
+                <li>Fast Uploads</li>
+                <li>Version History</li>
+                <li>Priority support</li>
+            </ul>
+
+            <button class="btn-outline">Choose Pro</button>
+        </div>
+
+        <!-- Business -->
+        <div class="pricing-card">
+            <h3 class="plan-name">Business</h3>
+            <h1 class="storage">100 GB</h1>
+
+            <ul class="features">
+                <li>Team Account</li>
+                <li>Admin Control</li>
+                <li>Advanced Security</li>
+            </ul>
+
+            <button class="btn-outline">Contact Sales</button>
+        </div>
+
+    </div>
+</section>
+
+
+<!-- =================  REVIEW============= -->
+
+<section class="reviews-section">
+    <h2 class="reviews-title">What Our User Says</h2>
+
+    <div class="carousel-viewport">
+        <div class="carousel">
+            <div class="carousel-track">
+
+                <div class="review-card">
+                    <div class="avatar-wrap">
+                        <img src="https://i.pravatar.cc/80?img=12" class="avatar">
+                    </div>
+                    <p class="review-text">
+                        “I found a cloud platform that’s both secure and simple to use.”
+                    </p>
+                    <span class="author">— Riya D., Photographer</span>
+                    <div class="rating">⭐ 4.2</div>
+                </div>
+
+                <div class="review-card">
+                    <div class="avatar-wrap">
+                        <img src="https://i.pravatar.cc/80?img=32" class="avatar">
+                    </div>
+                    <p class="review-text">
+                        “I finally found a cloud platform that’s both secure and simple to use.”
+                    </p>
+                    <span class="author">— Riya D., Photographer</span>
+                    <div class="rating">⭐ 4.2</div>
+                </div>
+
+                <div class="review-card">
+                    <div class="avatar-wrap">
+                        <img src="https://i.pravatar.cc/80?img=45" class="avatar">
+                    </div>
+                    <p class="review-text">
+                        “CloudSync made file sharing across our team effortless. Secure and fast!”
+                    </p>
+                    <span class="author">— Aarav S., Product Manager</span>
+                    <div class="rating">⭐ 4.3</div>
+                </div>
+
+                <div class="review-card">
+                    <div class="avatar-wrap">
+                        <img src="https://i.pravatar.cc/80?img=12" class="avatar">
+                    </div>
+                    <p class="review-text">
+                        “I found a cloud platform that’s both secure and simple to use.”
+                    </p>
+                    <span class="author">— Riya D., Photographer</span>
+                    <div class="rating">⭐ 4.2</div>
+                </div>
+
+                <div class="review-card">
+                    <div class="avatar-wrap">
+                        <img src="https://i.pravatar.cc/80?img=32" class="avatar">
+                    </div>
+                    <p class="review-text">
+                        “I finally found a cloud platform that’s both secure and simple to use.”
+                    </p>
+                    <span class="author">— Riya D., Photographer</span>
+                    <div class="rating">⭐ 4.2</div>
+                </div>
+
+                <div class="review-card">
+                    <div class="avatar-wrap">
+                        <img src="https://i.pravatar.cc/80?img=45" class="avatar">
+                    </div>
+                    <p class="review-text">
+                        “CloudSync made file sharing across our team effortless. Secure and fast!”
+                    </p>
+                    <span class="author">— Aarav S., Product Manager</span>
+                    <div class="rating">⭐ 4.3</div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Buttons BELOW carousel -->
+    <div class="carousel-controls">
+        <button class="nav-btn prev">&#10094;</button>
+        <button class="nav-btn next">&#10095;</button>
+    </div>
+</section>
+
+
+
+
+
+<!-- ================= CTA ================= -->
+<section class="cta">
+    <h2>Ready to Simplify Your Cloud Life?</h2>
+    <button onclick="window.location.href='{% url 'accounts:signup_page' %}'">Join Now - It's free</button>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer class="footer" id="footer">
+    <div class="footer-container">
+
+        <!-- Logo -->
+        <div class="footer-brand">
+            <div class="logo-box">
+                <img src="{% static 'images/cloud.png' %}" alt="CloudSync">
+            </div>
+            <h3 class="brand-name">CloudSync</h3>
+        </div>
+
+        <!-- Links 1 -->
+        <div class="footer-links">
+            <a href="#">Home</a>
+            <a href="#">About</a>
+            <a href="#">Pricing</a>
+            <a href="#">Contact</a>
+        </div>
+
+        <!-- Links 2 -->
+        <div class="footer-links">
+            <a href="#">Terms and conditions</a>
+            <a href="#">Privacy policy</a>
+            <a href="#">Support</a>
+            <a href="#">Contact</a>
+        </div>
+
+        <!-- Newsletter & Social -->
+        <div class="footer-newsletter">
+            <div class="newsletter-box">
+                <input type="email" id="email" placeholder="Enter your mail ID">
+                <button>Submit</button>
+            </div>
+
+            <p class="follow-text">Follow us on</p>
+            <div class="social-icons">
+                <span class="social-icons-image-area"><img src="{% static 'images/whatsapp.png' %}" class="social-icons-image" alt=""></span>
+                <span class="social-icons-image-area"><img src="{% static 'images/facebook.png' %}" class="social-icons-image" alt=""></span>
+                <span class="social-icons-image-area"><img src="{% static 'images/instagram.png' %}" class="social-icons-image" alt=""></span>
+                <span class="social-icons-image-area"><img src="{% static 'images/youtube.png' %}" class="social-icons-image" alt=""></span>
+            </div>
+        </div>
+
+    </div>
+</footer>
+
+
+<script src="{% static 'js/index.js' %}"></script>
+
+</body>
+</html>

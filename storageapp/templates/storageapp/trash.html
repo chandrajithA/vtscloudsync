@@ -1,0 +1,119 @@
+{% extends 'storageapp/base.html' %}
+{% load static %}
+
+{% block title %}Trash - Cloudsync{% endblock %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'css/trash.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="trash-alert">
+    <span>⚠ Items in trash will be permanently deleted after 30 days</span>
+</div>
+
+<div class="trash-stats">
+    <div class="stat-box">
+        <p>Items in Trash</p>
+        <h3 id="trashCount">{{ total_files }}</h3>
+    </div>
+    <div class="stat-box">
+        <p>Total Size</p>
+        <h3 id="trashSize">{{ total_size|filesizeformat }}</h3>
+    </div>
+    <div class="stat-box danger">
+        <p>Expiring soon</p>
+        <h3 id="trashExpiring">{{ expiring_soon }}</h3>
+    </div>
+</div>
+
+<div class="trash-actions">
+    <input type="text" id="trashSearch" placeholder="Search deleted files..." value="{{ query }}">
+    <button class="btn-primary" onclick="restoreAll()">Restore All</button>
+    <button class="btn-danger" onclick="emptyTrash()">Empty Trash</button>
+</div>
+
+<div class="trash-list">
+{% for file in files %}
+<div class="trash-item" id="file-{{ file.id }}">
+
+    <div class="trash-left">
+        <img src="{% static 'images/file.png' %}">
+        <div>
+            <strong>{{ file.file_name }}</strong>
+            <p>{{ file.file_type|capfirst }} • {{ file.file_size|filesizeformat }}</p>
+        </div>
+    </div>
+
+    <div class="trash-meta">
+        <span>Deleted {{ file.deleted_at|timesince }} ago</span>
+        <span class="expire">Expires in {{ file.days_left }} days</span>
+    </div>
+
+    <div class="trash-buttons">
+        <button class="restore" onclick="restoreFile({{ file.id }})">Restore</button>
+        <button class="delete" onclick="deleteFile({{ file.id }})">Delete</button>
+    </div>
+
+</div>
+{% endfor %}
+</div>
+
+{% endblock %}
+
+{% block script %}
+<script>
+
+const searchInput = document.getElementById("trashSearch");
+let timeout = null;
+
+searchInput.addEventListener("keyup", function () {
+    clearTimeout(timeout);
+
+    timeout = setTimeout(() => {
+        const query = searchInput.value;
+        window.location.href = `?q=${encodeURIComponent(query)}`;
+    }, 400); // debounce
+});
+
+
+function restoreFile(id) {
+    fetch(`/user/trash/restore/${id}/`)
+    .then(r => r.json())
+    .then(() => document.getElementById(`file-${id}`).remove());
+}
+
+function deleteFile(id) {
+    if (!confirm("Delete permanently?")) return;
+    fetch(`/user/trash/delete/${id}/`)
+    .then(r => r.json())
+    .then(() => document.getElementById(`file-${id}`).remove());
+}
+
+function restoreAll() {
+    fetch(`/user/trash/restore-all/`)
+    .then(() => location.reload());
+}
+
+function emptyTrash() {
+    if (!confirm("Empty trash permanently?")) return;
+    fetch(`/user/trash/empty/`)
+    .then(() => location.reload());
+}
+
+function updateStats(stats) {
+    document.getElementById("trashCount").innerText = stats.count;
+    document.getElementById("trashSize").innerText = formatBytes(stats.size);
+    document.getElementById("trashExpiring").innerText = stats.expiring;
+}
+
+function formatBytes(bytes) {
+    if (bytes === 0) return "0 KB";
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return (bytes / Math.pow(1024, i)).toFixed(1) + " " + sizes[i];
+}
+
+</script>
+{% endblock %}

@@ -1,0 +1,98 @@
+{% extends 'storageapp/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}My Files - CloudSync{% endblock %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'css/myfiles.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<h2 class="page-title">My Files</h2>
+
+<div class="files-table">
+
+    <!-- HEADER -->
+    <div class="table-head">
+        <span>Name</span>
+        <span>Modified</span>
+        <span>Owner</span>
+        <span></span>
+    </div>
+
+    <!-- FILE ROWS -->
+    {% for file in files %}
+    <div class="file-row">
+
+        <!-- FILE INFO -->
+        <div class="file-info">
+            <div class="file-icon {{ file.file_type }}">
+                {% if file.file_type == "image" %}
+                    <img src="{% static 'images/image.png' %}">
+                {% elif file.file_type == "video" %}
+                    <img src="{% static 'images/video.png' %}">
+                {% elif file.file_type == "document" %}
+                    <img src="{% static 'images/adobe.png' %}">
+                {% elif file.file_type == "excel" %}
+                    <img src="{% static 'images/excel.png' %}">
+                {% elif file.file_type == "word" %}
+                    <img src="{% static 'images/word.png' %}">
+                {% else %}
+                    <img src="{% static 'images/file.png' %}">
+                {% endif %}
+            </div>
+
+            <div>
+                <div class="file-name">{{ file.file_name }}</div>
+                <div class="file-meta">
+                    {{ file.file_type|capfirst }} • {{ file.file_size|filesizeformat }} •
+                    {{ file.uploaded_at|naturaltime }}
+                </div>
+            </div>
+        </div>
+
+        <!-- DATE -->
+        <div class="file-date">
+            {{ file.uploaded_at|date:"F d" }}
+        </div>
+
+        <!-- OWNER -->
+        <div class="file-owner">
+            {{ request.user.first_name|default:request.user.username }}
+        </div>
+
+        <!-- ACTIONS -->
+        <div class="file-actions">
+            {% if file.file_url %}
+            <a href="{{ file.file_url }}" target="_blank" class="icon-btn download" title="Download">
+                <img src="{% static 'images/download.png' %}" alt="">
+            </a>
+
+            <button class="icon-btn share" title="Share"
+                onclick="navigator.clipboard.writeText('{{ file.file_url }}')">
+                <img src="{% static 'images/shareicon.png' %}" alt="">
+            </button>
+            <button 
+                class="icon-btn trash"
+                title="Move to Trash"
+                onclick="moveToTrash('{{ file.id }}')">
+                <img src="{% static 'images/trash.png' %}" alt="">
+            </button>
+            {% endif %}
+
+            
+
+            
+        </div>
+
+    </div>
+    {% empty %}
+        <p class="empty">No files uploaded</p>
+    {% endfor %}
+</div>
+
+
+
+{% endblock %}
