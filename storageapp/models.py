@@ -16,8 +16,8 @@ class CloudFile(models.Model):
     file_size = models.BigIntegerField()
     file_type = models.CharField(max_length=20, choices=FILE_TYPES)
     file_url = models.URLField(null=True, blank=True)
-    uploaded_file = models.FileField(upload_to='cloud/')
-    public_id = models.CharField(max_length=255) 
+    uploaded_file = models.FileField(upload_to='cloud/',null=True)
+    public_id = models.CharField(max_length=255,null=True) 
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     is_deleted = models.BooleanField(default=False)
