@@ -35,7 +35,7 @@ SECRET_KEY = env("PROJECT_SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool("DEBUG")
 
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS")
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
 
 
 
@@ -244,3 +244,11 @@ MEDIA_URL = '/media/'
 LOGIN_URL = '/accounts/signin_page/'
 LOGIN_REDIRECT_URL = '/user/dashboard/'
 LOGOUT_REDIRECT_URL = ''
+
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://cloudsync-6aiv.onrender.com",
+]
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
