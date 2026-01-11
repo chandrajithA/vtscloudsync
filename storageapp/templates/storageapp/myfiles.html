@@ -70,10 +70,10 @@
                 <img src="{% static 'images/download.png' %}" alt="">
             </a>
 
-            <button class="icon-btn share" title="Share"
-                onclick="navigator.clipboard.writeText('{{ file.file_url }}')">
+            <button class="icon-btn share" title="Share" onclick="navigator.clipboard.writeText('{{ file.file_url }}')">
                 <img src="{% static 'images/shareicon.png' %}" alt="">
             </button>
+
             <button 
                 class="icon-btn trash"
                 title="Move to Trash"
@@ -95,4 +95,35 @@
 
 
 
+{% endblock %}
+
+
+
+{% block script %}
+<script>
+function moveToTrash(fileId) {
+    if (!confirm("Move this file to Trash?")) return;
+
+    fetch(`/user/file/${fileId}/trash/`, {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": "{{ csrf_token }}",
+            "Content-Type": "application/json"
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            // remove card from UI
+            document.getElementById(`file-${fileId}`).remove();
+        } else {
+            alert("Failed to move file");
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert("Error occurred");
+    });
+}
+</script>
 {% endblock %}
