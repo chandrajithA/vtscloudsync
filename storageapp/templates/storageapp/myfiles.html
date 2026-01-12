@@ -24,7 +24,7 @@
 
     <!-- FILE ROWS -->
     {% for file in files %}
-    <div class="file-row">
+    <div class="file-row" id="file-{{ file.id }}">
 
         <!-- FILE INFO -->
         <div class="file-info">
@@ -66,7 +66,14 @@
         <!-- ACTIONS -->
         <div class="file-actions">
             {% if file.file_url %}
-            <a href="{{ file.file_url }}" target="_blank" class="icon-btn download" title="Download">
+
+            <a href="{{ file.file_url }}" target="_blank" class="icon-btn">
+                <img src="{% static 'images/hidepassword_icon.png' %}" alt="">
+            </a>
+
+            <a href="{% url 'storageapp:download_file' file.id %}"
+            class="icon-btn download"
+            title="Download">
                 <img src="{% static 'images/download.png' %}" alt="">
             </a>
 
@@ -114,8 +121,10 @@ function moveToTrash(fileId) {
     .then(res => res.json())
     .then(data => {
         if (data.success) {
-            // remove card from UI
-            document.getElementById(`file-${fileId}`).remove();
+            const row = document.getElementById(`file-${fileId}`);
+            if (row) {
+                row.remove();
+            }
         } else {
             alert("Failed to move file");
         }

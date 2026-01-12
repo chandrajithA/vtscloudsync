@@ -24,8 +24,8 @@
             <img src="{% static 'images/adobe.png' %}">
         </div>
         <h4>Documents</h4>
-        <p>{{ cards.documents.count }} files</p>
-        <strong>{{ cards.documents.size|filesizeformat }}</strong>
+        <p><span id="doc-count">{{ cards.document.count }}</span> files</p>
+        <strong id="doc-size">{{ cards.document.size|filesizeformat }}</strong>
         <a href="{% url 'storageapp:myfiles' %}?type=document">View all →</a>
     </div>
 
@@ -35,8 +35,8 @@
             <img src="{% static 'images/image.png' %}" alt="Video">
         </div>
         <h4>Images</h4>
-        <p>{{ cards.images.count }} files</p>
-        <strong>{{ cards.images.size|filesizeformat }}</strong>
+        <p><span id="img-count">{{ cards.image.count }}</span> files</p>
+        <strong id="img-size">{{ cards.image.size|filesizeformat }}</strong>
         <a href="{% url 'storageapp:myfiles' %}?type=image">View all →</a>
     </div>
 
@@ -47,8 +47,8 @@
             <img src="{% static 'images/video.png' %}" alt="Video">
         </div>
         <h4>Videos</h4>
-        <p>{{ cards.videos.count }} files</p>
-        <strong>{{ cards.videos.size|filesizeformat }}</strong>
+        <p><span id="vid-count">{{ cards.video.count }}</span> files</p>
+        <strong id="vid-size">{{ cards.video.size|filesizeformat }}</strong>
         <a href="{% url 'storageapp:myfiles' %}?type=video">View all →</a>
     </div>
 
@@ -58,8 +58,8 @@
             <img src="{% static 'images/file.png' %}" alt="Video">
         </div>
         <h4>Others</h4>
-        <p>{{ cards.others.count }} files</p>
-        <strong>{{ cards.others.size|filesizeformat }}</strong>
+        <p><span id="oth-count">{{ cards.other.count }}</span> files</p>
+        <strong id="oth-size">{{ cards.other.size|filesizeformat }}</strong>
         <a href="{% url 'storageapp:myfiles' %}?type=other">View all →</a>
     </div>
 
@@ -123,6 +123,14 @@
 
 {% block script %}
 <script>
+function formatBytes(bytes) {
+    if (bytes === 0) return "0 B";
+    const k = 1024;
+    const sizes = ["B", "KB", "MB", "GB", "TB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+}
+
 function moveToTrash(fileId) {
     if (!confirm("Move this file to Trash?")) return;
 
@@ -135,17 +143,26 @@ function moveToTrash(fileId) {
     })
     .then(res => res.json())
     .then(data => {
-        if (data.success) {
-            // remove card from UI
-            document.getElementById(`file-${fileId}`).remove();
-        } else {
-            alert("Failed to move file");
-        }
+        if (!data.success) return alert("Failed");
+
+        // remove card
+        document.getElementById(`file-${fileId}`)?.remove();
+
+        // 🔥 update stats live
+        document.getElementById("doc-count").innerText = data.stats.document.count;
+        document.getElementById("doc-size").innerText = formatBytes(data.stats.document.size);
+
+        document.getElementById("img-count").innerText = data.stats.image.count;
+        document.getElementById("img-size").innerText = formatBytes(data.stats.image.size);
+
+        document.getElementById("vid-count").innerText = data.stats.video.count;
+        document.getElementById("vid-size").innerText = formatBytes(data.stats.video.size);
+
+        document.getElementById("oth-count").innerText = data.stats.other.count;
+        document.getElementById("oth-size").innerText = formatBytes(data.stats.other.size);
     })
-    .catch(err => {
-        console.error(err);
-        alert("Error occurred");
-    });
+    .catch(() => alert("Error occurred"));
 }
+
 </script>
 {% endblock %}

@@ -22,10 +22,10 @@ def dashboard(request):
 
     # ---- STORAGE CARDS ----
     stats = {
-        "documents": files.filter(file_type="document"),
-        "images": files.filter(file_type="image"),
-        "videos": files.filter(file_type="video"),
-        "others": files.filter(file_type="other"),
+        "document": files.filter(file_type="document"),
+        "image": files.filter(file_type="image"),
+        "video": files.filter(file_type="video"),
+        "other": files.filter(file_type="other"),
     }
 
     cards = {}
@@ -52,8 +52,38 @@ def dashboard(request):
 def move_to_trash(request, file_id):
     file = get_object_or_404(CloudFile, id=file_id, user=request.user)
     file.is_deleted = True
+    file.deleted_at = timezone.now()
     file.save()
-    return JsonResponse({"success": True})
+
+    files = CloudFile.objects.filter(user=request.user, is_deleted=False)
+
+    stats = {
+        "document": {
+            "count": files.filter(file_type="document").count(),
+            "size": files.filter(file_type="document")
+                          .aggregate(s=Sum("file_size"))["s"] or 0
+        },
+        "image": {
+            "count": files.filter(file_type="image").count(),
+            "size": files.filter(file_type="image")
+                          .aggregate(s=Sum("file_size"))["s"] or 0
+        },
+        "video": {
+            "count": files.filter(file_type="video").count(),
+            "size": files.filter(file_type="video")
+                          .aggregate(s=Sum("file_size"))["s"] or 0
+        },
+        "other": {
+            "count": files.filter(file_type="other").count(),
+            "size": files.filter(file_type="other")
+                          .aggregate(s=Sum("file_size"))["s"] or 0
+        },
+    }
+
+    return JsonResponse({
+        "success": True,
+        "stats": stats
+    })
 
 
 
@@ -195,6 +225,35 @@ def myfiles(request):
             "active_type": file_type,
         }
     )
+
+
+import requests
+from django.http import StreamingHttpResponse, Http404
+
+@login_required
+def download_file(request, file_id):
+    file = get_object_or_404(
+        CloudFile,
+        id=file_id,
+        user=request.user,
+        is_deleted=False
+    )
+
+    try:
+        r = requests.get(file.file_url, stream=True, timeout=30)
+        r.raise_for_status()
+    except Exception:
+        raise Http404("File not available")
+
+    response = StreamingHttpResponse(
+        r.iter_content(chunk_size=8192),
+        content_type=r.headers.get("Content-Type", "application/octet-stream"),
+    )
+
+    response["Content-Disposition"] = f'attachment; filename="{file.file_name}"'
+    response["Content-Length"] = r.headers.get("Content-Length", "")
+
+    return response
 
 @login_required
 def myfiles_search(request):

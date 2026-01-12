@@ -36,6 +36,11 @@ SECRET_KEY = env("PROJECT_SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool("DEBUG")
 
+if DEBUG:
+    STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
+else:
+    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
 ALLOWED_HOSTS = [
     "cloudsync-6aiv.onrender.com",
     ".onrender.com",
@@ -95,32 +100,29 @@ TEMPLATES = [
     },
 ]
 
-
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
 WSGI_APPLICATION = 'vtscloudsync.wsgi.application'
 
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
-
-import dj_database_url
-
-
-
 DATABASES = {
-    'default': dj_database_url.config(
-        default=env("DATABASE_URL"),
-        engine='django.db.backends.mysql',
-    )
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
 }
+
+# import dj_database_url
+
+
+
+# DATABASES = {
+#     'default': dj_database_url.config(
+#         default=env("DATABASE_URL"),
+#         engine='django.db.backends.mysql',
+#     )
+# }
 
 
 # DATABASES = {
@@ -256,9 +258,9 @@ CSRF_TRUSTED_ORIGINS = [
     "https://cloudsync-6aiv.onrender.com",
 ]
 
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-USE_X_FORWARDED_HOST = True
-SECURE_SSL_REDIRECT = False
-SECURE_HSTS_SECONDS = 0
-SECURE_CONTENT_TYPE_NOSNIFF = False
-SECURE_BROWSER_XSS_FILTER = False
+# SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+# USE_X_FORWARDED_HOST = True
+# SECURE_SSL_REDIRECT = False
+# SECURE_HSTS_SECONDS = 0
+# SECURE_CONTENT_TYPE_NOSNIFF = False
+# SECURE_BROWSER_XSS_FILTER = False

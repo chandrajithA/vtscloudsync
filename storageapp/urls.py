@@ -8,6 +8,7 @@ urlpatterns = [
     path('upload/', upload_page, name='upload_page'),
     path('share/', share_file, name='share_file'),  
     path('myfiles/', myfiles, name='myfiles'),  
+    path("file/<int:file_id>/download/", download_file, name="download_file"),
     path("myfiles/search/", myfiles_search, name="myfiles_search"),
     path('trash/', trash, name='trash'),  
     path("file/<int:file_id>/trash/", move_to_trash, name="move_to_trash"), 

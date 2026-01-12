@@ -32,5 +32,8 @@ class CloudFile(models.Model):
         if self.deleted_at:
             return (self.expires_at() - timezone.now()).days
         return None
+    
+
+
 
    
