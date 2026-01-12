@@ -100,10 +100,11 @@
                 <img src="{% static 'images/download.png' %}" alt="">
             </a>
 
-            <button class="icon-btn share" title="Share"
-                onclick="navigator.clipboard.writeText('{{ file.file_url }}')">
-                <img src="{% static 'images/shareicon.png' %}" alt="">
+            <button class="icon-btn share"
+                    onclick="shareFile('{{ file.id }}')">
+                <img src="{% static 'images/shareicon.png' %}">
             </button>
+
             <button 
                 class="icon-btn trash"
                 title="Move to Trash"
@@ -130,6 +131,35 @@ function formatBytes(bytes) {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 }
+
+function shareFile(fileId) {
+    const username = prompt("Enter username to share with:");
+    if (!username) return;
+
+    fetch(`/user/file/${fileId}/share/`, {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": "{{ csrf_token }}",
+        },
+        body: new URLSearchParams({
+            username: username
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert("✅ File shared successfully");
+        } else {
+            alert(data.error);
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert("❌ Error occurred");
+    });
+}
+
+
 
 function moveToTrash(fileId) {
     if (!confirm("Move this file to Trash?")) return;

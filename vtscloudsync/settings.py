@@ -100,6 +100,9 @@ TEMPLATES = [
     },
 ]
 
+
+
+
 WSGI_APPLICATION = 'vtscloudsync.wsgi.application'
 
 

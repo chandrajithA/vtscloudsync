@@ -10,6 +10,11 @@ from django.utils import timezone
 from django.db.models import Count, Sum
 from django.views.decorators.http import require_POST
 from django.db.models import Q
+from django.contrib.auth import get_user_model
+import requests
+from django.http import StreamingHttpResponse, Http404
+
+User = get_user_model()
 
 
 
@@ -193,9 +198,56 @@ def upload_page(request):
 
 
 @login_required
-def share_file(request):
-    # files = File.objects.filter(owner=request.user, is_deleted=False)
-    return render(request, 'storageapp/share.html')
+def shared_files(request):
+    shared_with_me = SharedFile.objects.filter(
+        shared_with=request.user,
+        file__is_deleted=False
+    ).select_related("file", "owner")
+
+    shared_by_me = SharedFile.objects.filter(
+        owner=request.user,
+        file__is_deleted=False
+    ).select_related("file", "shared_with")
+
+    return render(request, "storageapp/shared.html", {
+        "shared_with_me": shared_with_me,
+        "shared_by_me": shared_by_me,
+    })
+
+
+@require_POST
+@login_required
+def share_file_api(request, file_id):
+    file = get_object_or_404(
+        CloudFile,
+        id=file_id,
+        user=request.user,
+        is_deleted=False
+    )
+
+    username = request.POST.get("username")
+
+    if not username:
+        return JsonResponse({"success": False, "error": "Username required"})
+
+    try:
+        target_user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return JsonResponse({"success": False, "error": "User not found"})
+
+    if target_user == request.user:
+        return JsonResponse({"success": False, "error": "Cannot share with yourself"})
+
+    SharedFile.objects.get_or_create(
+        file=file,
+        owner=request.user,
+        shared_with=target_user
+    )
+
+    return JsonResponse({"success": True})
+
+
+
 
 @login_required
 def myfiles(request):
@@ -227,33 +279,56 @@ def myfiles(request):
     )
 
 
-import requests
-from django.http import StreamingHttpResponse, Http404
+
+
 
 @login_required
 def download_file(request, file_id):
-    file = get_object_or_404(
-        CloudFile,
+    file = CloudFile.objects.filter(
         id=file_id,
-        user=request.user,
         is_deleted=False
-    )
+    ).filter(
+        Q(user=request.user) |
+        Q(shared_entries__shared_with=request.user)
+    ).distinct().first()
 
-    try:
-        r = requests.get(file.file_url, stream=True, timeout=30)
-        r.raise_for_status()
-    except Exception:
-        raise Http404("File not available")
+    if not file:
+        raise Http404("File not accessible")
+
+    r = requests.get(file.file_url, stream=True, timeout=30)
+    r.raise_for_status()
 
     response = StreamingHttpResponse(
         r.iter_content(chunk_size=8192),
         content_type=r.headers.get("Content-Type", "application/octet-stream"),
     )
-
     response["Content-Disposition"] = f'attachment; filename="{file.file_name}"'
     response["Content-Length"] = r.headers.get("Content-Length", "")
-
     return response
+
+
+
+
+@require_POST
+@login_required
+def remove_shared_file(request, shared_id):
+    shared = get_object_or_404(
+        SharedFile,
+        id=shared_id
+    )
+
+    # 🔐 Security check
+    if request.user != shared.owner and request.user != shared.shared_with:
+        return JsonResponse({"success": False, "error": "Not allowed"})
+
+    # ✅ ONLY remove share entry
+    shared.delete()
+
+    return JsonResponse({"success": True})
+
+
+
+
 
 @login_required
 def myfiles_search(request):
@@ -355,6 +430,9 @@ def delete_file(request, file_id):
         "success": True,
         "stats": trash_stats(request.user)
     })
+
+
+
 
 
 @login_required

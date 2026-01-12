@@ -34,6 +34,31 @@ class CloudFile(models.Model):
         return None
     
 
+User = settings.AUTH_USER_MODEL
+
+class SharedFile(models.Model):
+    file = models.ForeignKey(
+        "CloudFile",
+        on_delete=models.CASCADE,
+        related_name="shared_entries"
+    )
+    owner = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="shared_by_me"
+    )
+    shared_with = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="shared_with_me"
+    )
+    shared_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("file", "shared_with")
+
+    def __str__(self):
+        return f"{self.file.file_name} → {self.shared_with}"
 
 
    

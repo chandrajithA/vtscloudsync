@@ -39,7 +39,7 @@
     </form>
 
     <div class="header-right">
-        <div class="notification"><img src="{% static 'images/bell.png' %}" alt="" srcset=""><span>3</span></div>
+        <div class="notification"><img src="{% static 'images/bell.png' %}" alt="" srcset=""><span>0</span></div>
         <div class="user-pill">{{ request.user.first_name|default:request.user.username }}</div>
     </div>
 </div>
@@ -48,7 +48,7 @@
 <div class="sidebar">
     <a href="{% url 'storageapp:dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"><img src="{% static 'images/dashboard.png' %}" alt=""> Dashboard</a>
     <a href="{% url 'storageapp:upload_page' %}" class="nav-item {% if request.resolver_match.url_name == 'upload_page' %}active{% endif %}"><img src="{% static 'images/upload.png' %}" alt=""> Upload</a>
-    {% comment %} <a href="{% url 'storageapp:share_file' %}" class="nav-item {% if request.resolver_match.url_name == 'share_file' %}active{% endif %}"><img src="{% static 'images/share.png' %}" alt=""> Shared</a> {% endcomment %}
+    <a href="{% url 'storageapp:shared_files' %}" class="nav-item {% if request.resolver_match.url_name == 'shared_files' %}active{% endif %}"><img src="{% static 'images/share.png' %}" alt=""> Shared</a>
     <a href="{% url 'storageapp:myfiles' %}" class="nav-item {% if request.resolver_match.url_name == 'myfiles' %}active{% endif %}"><img src="{% static 'images/myfile.png' %}" alt=""> My Files</a>
     <a href="{% url 'storageapp:trash' %}" class="nav-item {% if request.resolver_match.url_name == 'trash' %}active{% endif %}"><img src="{% static 'images/trash.png' %}" alt=""> Trash</a>
     <a href="{% url 'storageapp:settings' %}" class="nav-item {% if request.resolver_match.url_name == 'settings' %}active{% endif %}"><img src="{% static 'images/settings.png' %}" alt=""> Settings</a>

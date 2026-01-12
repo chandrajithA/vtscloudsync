@@ -1,0 +1,128 @@
+{% extends 'storageapp/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Shared - Cloudsync{% endblock %}
+
+{% block style %}
+    <link rel="stylesheet" href="{% static 'css/shared.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="shared-wrapper">
+
+    <div class="shared-header">
+        <h2>Shared Files</h2>
+        <p>Files shared with you and by you</p>
+    </div>
+
+    <!-- Stats -->
+    <div class="shared-stats">
+        <div class="stat-card">
+            <div class="stat-icon blue">
+                <img src="{% static 'images/users.png' %}">
+            </div>
+            <div class="stat-info">
+                <h4>Shared by you</h4>
+                <strong>{{ shared_by_me|length }} Files</strong>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon purple">
+                <img src="{% static 'images/shareicon.png' %}">
+            </div>
+            <div class="stat-info">
+                <h4>Shared with you</h4>
+                <strong>{{ shared_with_me|length }} Files</strong>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon green">
+                <img src="{% static 'images/file.png' %}">
+            </div>
+            <div class="stat-info">
+                <h4>Total Shared</h4>
+                <strong>{{ shared_by_me|length|add:shared_with_me|length }} Files</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="shared-table">
+
+        <div class="shared-head">
+            <span>Name</span>
+            <span>Owner</span>
+            <span>Date</span>
+            <span></span>
+        </div>
+
+        {% for s in shared_with_me %}
+        <div class="shared-row">
+            <div class="shared-file">
+                <img src="{% static 'images/file.png' %}">
+                <div>
+                    <div class="shared-file-name">{{ s.file.file_name }}</div>
+                    <div class="shared-file-meta">
+                        {{ s.file.file_size|filesizeformat }}
+                    </div>
+                </div>
+            </div>
+
+            <span>{{ s.owner.username }}</span>
+            <span>{{ s.shared_at|date:"M d" }}</span>
+
+            <!-- VIEW -->
+            <div class="recent-actions">
+                <a href="{{ s.file.file_url }}" target="_blank" title="View" class="icon-btn">
+                    <img src="{% static 'images/hidepassword_icon.png' %}">
+                </a>
+
+
+            
+                    <a href="{% url 'storageapp:download_file' s.file.id %}" class="icon-btn">
+                        <img src="{% static 'images/download.png' %}">
+                    </a>
+            
+
+                <!-- DELETE -->
+                <button onclick="removeShared('{{ s.id }}')" title="Remove" class="icon-btn">
+                    <img src="{% static 'images/trash.png' %}">
+                </button>
+
+
+            </div>
+        </div>
+        {% endfor %}
+
+    </div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+function removeShared(sharedId) {
+    if (!confirm("Remove this shared file?")) return;
+
+    fetch(`/user/shared/${sharedId}/remove/`, {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": "{{ csrf_token }}"
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.error || "Failed");
+        }
+    })
+    .catch(() => alert("Error occurred"));
+}
+
+</script>
+{% endblock %}
