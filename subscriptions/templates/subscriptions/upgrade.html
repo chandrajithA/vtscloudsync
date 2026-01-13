@@ -1,0 +1,168 @@
+{% extends 'storageapp/base.html' %}
+{% load static %}
+
+{% block title %}Upgrade Plan - CloudSync{% endblock %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'css/upgrade.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="upgrade-page">
+
+    <h2 class="upgrade-title">Upgrade your storage</h2>
+    <p class="upgrade-subtitle">
+        Choose a plan that fits your needs. Upgrade anytime.
+    </p>
+
+    <div class="plan-grid">
+        {% for plan in plans %}
+        <div class="plan-card">
+
+            {% if plan.name == 'Pro' %}
+            <span class="badge">Most Popular</span>
+            {% endif %}
+
+            <h3>{{ plan.name }}</h3>
+
+            <p class="storage">
+                {{ plan.storage_limit|filesizeformat }} Storage
+            </p>
+
+            <div class="price">
+                ₹{{ plan.price }}
+                <span>/ lifetime</span>
+            </div>
+
+            <ul class="features">
+                <li>✔ Secure cloud storage</li>
+                <li>✔ Fast downloads</li>
+                <li>✔ File sharing</li>
+                <li>✔ Priority support</li>
+            </ul>
+
+            <button
+                class="upgrade-btn"
+                onclick="upgradePlan({{ plan.id }})">
+                Upgrade
+            </button>
+
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+<div id="paymentOverlay" class="payment-overlay hidden">
+    <div class="payment-dialog">
+        <div class="spinner"></div>
+        <p id="paymentMessage">
+            Please wait, payment is being initiated…
+        </p>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block script %}
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<script>
+const overlay = document.getElementById("paymentOverlay");
+const message = document.getElementById("paymentMessage");
+
+function showOverlay(text) {
+    message.innerText = text;
+    overlay.classList.remove("hidden");
+}
+
+function hideOverlay() {
+    overlay.classList.add("hidden");
+}
+
+function upgradePlan(planId) {
+
+    showOverlay("Please wait, payment is being initiated…");
+
+    fetch("{% url 'subscriptions:create_order' %}", {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": "{{ csrf_token }}",
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: "plan_id=" + planId
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        if (!data.order_id) {
+            hideOverlay();
+            return;
+        }
+
+        const options = {
+            key: data.key,
+            amount: data.amount, // paise
+            currency: "INR",
+            name: "CloudSync",
+            description: data.plan + " Plan Upgrade",
+            order_id: data.order_id,
+
+            handler: function (response) {
+                showOverlay(
+                    "Please don't click or press any button, untill payment and plan upgrade confirmated"
+                );
+                verifyPayment(response);
+            },
+
+            prefill: {
+                name: "{{ request.user.first_name }}",
+                email: "{{ request.user.email }}"
+            },
+
+            modal: {
+                ondismiss: function () {
+                    hideOverlay();
+                }
+            },
+
+            theme: {
+                color: "#742BFA"
+            }
+        };
+
+        hideOverlay();
+        const rzp = new Razorpay(options);
+        rzp.open();
+    })
+    .catch(err => {
+        hideOverlay();
+        console.error(err);
+    });
+}
+
+function verifyPayment(response) {
+    fetch("{% url 'subscriptions:payment_success' %}", {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": "{{ csrf_token }}",
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: new URLSearchParams(response)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showOverlay(
+                "Payment successful. Redirecting to dashboard…"
+            );
+            setTimeout(() => {
+                window.location.href = "/user/dashboard/";
+            }, 2000);
+        }
+    });
+}
+</script>
+
+
+{% endblock %}

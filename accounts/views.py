@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 import re
+from subscriptions.models import *
 
 def signin_page(request):
     if request.method == "GET":
@@ -185,8 +186,25 @@ def signup_page(request):
                 first_name=name,
                 username=userid,
             )
-            messages.success(request, "User Registrated successful.")
+
+            # 2️⃣ Attach FREE plan (already created by admin)
+            try:
+                free_plan = Plan.objects.get(name__iexact="free")
+                UserSubscription.objects.create(
+                    user=user,
+                    plan=free_plan
+                )
+            except Plan.DoesNotExist:
+                messages.error(
+                    request,
+                    "Free plan not configured. Please contact admin."
+                )
+                user.delete()
+                return redirect('accounts:signup_page')
+
+            # 3️⃣ Login user
             login(request, user, 'django.contrib.auth.backends.ModelBackend')
+            messages.success(request, "User Registrated successful.")
             return redirect('storageapp:dashboard')
         else:
             prefill = {

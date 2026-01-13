@@ -26,7 +26,7 @@
     </div>
 
     
-
+    {% if request.resolver_match.url_name == 'dashboard' or request.resolver_match.url_name == 'shared_files' or request.resolver_match.url_name == 'myfiles' %}
     <form onsubmit="return false;" class="global-search">
         <div class="search-box">
         <input
@@ -37,6 +37,7 @@
         >
         </div>
     </form>
+    {% endif %}
 
     <div class="header-right">
         <div class="notification"><img src="{% static 'images/bell.png' %}" alt="" srcset=""><span>0</span></div>
@@ -55,11 +56,32 @@
     <a href="{% url 'accounts:user_logout' %}" class="nav-item"><img src="{% static 'images/logout.png' %}" alt=""> Logout</a>
 
     <div class="storage-box">
-    <strong>Storage</strong>
+        <div style="display:flex;justify-content:space-between">
+            <strong>Storage</strong>
 
-    <div class="progressbar">
+            <strong>{{ storage_percent }}%</strong>
+        </div>
+        <div class="progressbar">
+            <div class="progress-fill" style="width: {{ storage_percent }}%;"></div>
+        </div>
+
+        <p>
+            {{ storage_used|filesizeformat }}
+            of
+            {{ storage_limit|filesizeformat }}
+            used
+        </p>
+
+        {% if current_plan.name != "Business" %}
+            <a href="{% url 'subscriptions:upgrade_page' %}" class="upgrade-btn">
+                Upgrade
+            </a>
+        {% endif %}
+    </div>
     
 </div>
+
+
 
 
 </div>

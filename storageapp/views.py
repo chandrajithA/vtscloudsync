@@ -452,8 +452,31 @@ def empty_trash(request):
 
 @login_required
 def settings(request):
-    # files = File.objects.filter(owner=request.user, is_deleted=False)
-    return render(request, 'storageapp/settings.html')
+    user = request.user
+
+    if request.method == "POST":
+
+        # ✅ REMOVE PHOTO
+        if "remove_photo" in request.POST:
+            if user.profile_picture:
+                user.profile_picture.delete(save=False)
+                user.profile_picture = None
+                user.save()
+            return redirect("storageapp:settings")
+
+        # ✅ UPDATE PROFILE
+        if request.FILES.get("profile_picture"):
+            user.profile_picture = request.FILES["profile_picture"]
+
+        user.first_name = request.POST.get("first_name", "")
+        user.last_name = request.POST.get("last_name", "")
+        user.email = request.POST.get("email", "")
+        user.phone = request.POST.get("phone", "")
+        user.save()
+
+        return redirect("storageapp:settings")
+
+    return render(request, "storageapp/settings.html")
 
 
 

@@ -10,5 +10,6 @@ urlpatterns = [
     path('', include('cloudsync.urls')), 
     path('accounts/', include('accounts.urls')),
     path('user/', include('storageapp.urls')),
+    path('subscribe/', include('subscriptions.urls')),
     
 ]

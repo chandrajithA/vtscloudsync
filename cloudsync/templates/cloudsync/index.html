@@ -32,9 +32,17 @@
         </nav>
 
         <div class="nav-actions">
-            
-            <a href="{% url 'accounts:signin_page' %}" class="login-btn">Login</a>
+            {% if user.is_authenticated %}
+                <a href="{% url 'storageapp:dashboard' %}" class="login-btn">
+                    Dashboard
+                </a>
+            {% else %}
+                <a href="{% url 'accounts:signin_page' %}" class="login-btn">
+                    Login
+                </a>
+            {% endif %}
         </div>
+
     </div>
 </header>
 
@@ -169,7 +177,7 @@
         <!-- Free -->
         <div class="pricing-card">
             <h3 class="plan-name">Free</h3>
-            <h1 class="storage">10 GB</h1>
+            <h1 class="storage">5 GB</h1>
 
             <ul class="features">
                 <li>Basic Sharing</li>
@@ -182,7 +190,7 @@
         <!-- Pro (Featured) -->
         <div class="pricing-card">
             <h3 class="plan-name">Pro</h3>
-            <h1 class="storage">100 GB</h1>
+            <h1 class="storage">50 GB</h1>
 
             <ul class="features">
                 <li>Fast Uploads</li>
@@ -204,7 +212,7 @@
                 <li>Advanced Security</li>
             </ul>
 
-            <button class="btn-outline">Contact Sales</button>
+            <button class="btn-outline">Choose Business</button>
         </div>
 
     </div>

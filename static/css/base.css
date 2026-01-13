@@ -131,35 +131,50 @@
         /* Storage Card */
         .storage-box {
             margin-top: 30px;
-            border: 1px solid var(--grey);
-            border-radius: 12px;
+            border: 1px solid var(--lightgrey);
+            border-radius: 14px;
             padding: 16px;
+            background: #fff;
+        }
+
+        .storage-box strong {
+            font-size: 15px;
+            display: block;
+            margin-bottom: 8px;
         }
 
         .progressbar {
-            height: 6px;
-            background: var(--blue);
-            border-radius: 10px;
-            margin: 10px 0;
+            height: 8px;
+            background: #e5e7eb;          /* light grey background */
+            border-radius: 999px;
             overflow: hidden;
+            margin: 10px 0;
         }
 
-        .progressbar div {
+        .progress-fill {
             height: 100%;
-            width: 45%;
-            background: linear-gradient(to bottom, #742BFA, #A43AF0);
+            background: linear-gradient(to right, #742BFA, #A43AF0);
+            width: 0%;
+            transition: width 0.4s ease;
         }
 
+        /* Storage text */
+        .storage-box p {
+            font-size: 13px;
+            color: #555;
+            margin: 6px 0 10px;
+        }
+
+        /* Upgrade button */
         .upgrade-btn {
-            width: 100%;
+            display: block;
+            text-align: center;
             padding: 10px;
-            border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             background: linear-gradient(to bottom, #742BFA, #A43AF0);
-            color: var(--white);
-            cursor: pointer;
-            margin-top: 10px;
-            font-size: 15px;
+            color: #fff;
+            text-decoration: none;
+            font-size: 14px;
         }
 
         /* ===== MAIN CONTENT ===== */

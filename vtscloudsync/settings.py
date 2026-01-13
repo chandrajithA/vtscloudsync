@@ -95,6 +95,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                "storageapp.context_processors.storage_info",
+                "subscriptions.context_processors.subscription_context"
             ],
         },
     },
@@ -167,7 +169,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Kolkata'
 
 USE_I18N = True
 
@@ -255,6 +257,11 @@ MEDIA_URL = '/media/'
 LOGIN_URL = '/accounts/signin_page/'
 LOGIN_REDIRECT_URL = '/user/dashboard/'
 LOGOUT_REDIRECT_URL = ''
+
+
+RAZORPAY_KEY_ID = env("RAZORPAY_KEY_ID")
+RAZORPAY_KEY_SECRET = env("RAZORPAY_KEY_SECRET")
+RAZORPAY_REFUND_WEBHOOK_SECRET = env("RAZORPAY_REFUND_WEBHOOK_SECRET")
 
 
 CSRF_TRUSTED_ORIGINS = [
