@@ -164,7 +164,7 @@ def signup_page(request):
         elif len(userid) > 16 :
             messages.error(request, "User ID should contain less than 16 letters.")
             valid = False
-        elif len(userid) <= 8 :
+        elif len(userid) < 5 :
             messages.error(request, "User ID should contain atleast 8 letters.")
             valid = False
 
@@ -241,7 +241,7 @@ def signup_page(request):
 def user_logout(request):
     logout(request)  
     messages.success(request, "Signed out successfully.")
-    return redirect('')
+    return redirect('accounts:signin_page')
 
 
 @login_required

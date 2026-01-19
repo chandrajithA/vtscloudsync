@@ -20,14 +20,16 @@
     <section class="auth-left">
 
         
-
+        
         <div class="logoarea">
             <div class="logoimage">
                 <img src="{% static 'images/cloud.png' %}" alt="logoimage">
             </div>
-            <div class="logotext">CloudSync</div>
-
+            <a class="active" href="{% url 'cloudsync:home' %}">
+                <div class="logotext">CloudSync</div>
+            </a>
         </div>
+        </a>
       
 
         <div class="role-toggle">
