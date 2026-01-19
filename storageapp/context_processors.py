@@ -6,7 +6,7 @@ def storage_info(request):
     if not request.user.is_authenticated:
         return {}
 
-    sub = UserSubscription.objects.select_related("plan").get(user=request.user)
+    sub = UserSubscription.objects.select_related("plan").filter(user=request.user).first()
 
     used = (
         CloudFile.objects
@@ -17,7 +17,7 @@ def storage_info(request):
     limit = sub.plan.storage_limit
 
     storage_percent = min(
-        round((used / limit) * 100),
+        int((used / limit) * 100) if limit else 0,
         100
     )
 

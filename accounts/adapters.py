@@ -1,8 +1,9 @@
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
-from django.urls import reverse
 from django.contrib import messages
 from .models import User
 import re
+from subscriptions.models import UserSubscription, Plan
+from django.shortcuts import redirect
 
 def generate_unique_username_from_email(email):
     base = email.split('@')[0].lower()
@@ -46,6 +47,20 @@ class MySocialAccountAdapter(DefaultSocialAccountAdapter):
             )
             user.set_unusable_password()
             user.save()
+
+            try:
+                free_plan = Plan.objects.get(name__iexact="free")
+                UserSubscription.objects.create(
+                    user=user,
+                    plan=free_plan
+                )
+            except Plan.DoesNotExist:
+                messages.error(
+                    request,
+                    "Free plan not configured. Please contact admin."
+                )
+                user.delete()
+                return redirect('accounts:signup_page')
 
         # 🔗 LINK social account to user
         sociallogin.connect(request, user)
