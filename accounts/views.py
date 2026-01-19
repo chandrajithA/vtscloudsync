@@ -42,10 +42,24 @@ def signin_page(request):
         
         # 🔐 Role verification
         if role == "admin" and not user.is_superuser:
+            request.session['next_url'] = next_url
+            prefill = {
+                'username': username,
+                'password': password,
+                'role':role,
+            }
+            request.session['loginprefill'] = prefill
             messages.error(request, "Admin access denied.")
             return redirect('accounts:signin_page')
 
         if role == "user" and user.is_superuser:
+            request.session['next_url'] = next_url
+            prefill = {
+                'username': username,
+                'password': password,
+                'role':role,
+            }
+            request.session['loginprefill'] = prefill
             messages.error(request, "Please login as Admin.")
             return redirect('accounts:signin_page')
 
@@ -81,7 +95,11 @@ def signin_page(request):
             else:
                 request.session.set_expiry(0)
             messages.success(request, f"Login successful.")
-            return redirect(next_url or 'storageapp:dashboard')
+            if user.is_superuser:
+                return redirect(next_url or 'storageapp:admin_dashboard')
+            else:
+                return redirect(next_url or 'storageapp:dashboard')
+            
         
 
 
@@ -156,8 +174,8 @@ def signup_page(request):
 
 
         # 5. Password validation
-        if len(password) < 6 or len(password) > 18:
-            messages.error(request, "Password must be 6-18 characters.")
+        if len(password) < 8:
+            messages.error(request, "Password should be more than 8 characters.")
             valid = False
         elif not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
             messages.error(request, "Password must include at least one special character.")
@@ -224,6 +242,14 @@ def user_logout(request):
     logout(request)  
     messages.success(request, "Signed out successfully.")
     return redirect('')
+
+
+@login_required
+def post_login_redirect(request):
+    if request.user.is_superuser:
+        return redirect("storageapp:admin_dashboard")
+
+    return redirect("storageapp:dashboard")
 
 
 

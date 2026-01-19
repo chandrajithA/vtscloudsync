@@ -68,6 +68,7 @@
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
 <script>
+    const IS_SUPERUSER = {{ request.user.is_superuser|yesno:"true,false" }};
 const overlay = document.getElementById("paymentOverlay");
 const message = document.getElementById("paymentMessage");
 
@@ -157,10 +158,15 @@ function verifyPayment(response) {
                 "Payment successful. Redirecting to dashboard…"
             );
             setTimeout(() => {
-                window.location.href = "/user/dashboard/";
+                const redirectUrl = IS_SUPERUSER
+                    ? "/user/admin/dashboard/"
+                    : "/user/dashboard/";
+
+                window.location.href = redirectUrl;
             }, 2000);
         }
     });
+    
 }
 </script>
 

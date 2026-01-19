@@ -1,9 +1,8 @@
-from django.contrib import messages
-from django.shortcuts import redirect
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
+from django.urls import reverse
+from django.contrib import messages
 from .models import User
 import re
-from allauth.account.utils import perform_login
 
 def generate_unique_username_from_email(email):
     base = email.split('@')[0].lower()
@@ -20,30 +19,25 @@ def generate_unique_username_from_email(email):
 
 
 class MySocialAccountAdapter(DefaultSocialAccountAdapter):
+
     def pre_social_login(self, request, sociallogin):
-        """
-        If the social account email matches an existing user, link it and log in.
-        """
-
-        email = sociallogin.account.extra_data.get('email')
-        name = sociallogin.account.extra_data.get('name')
-
+        email = sociallogin.account.extra_data.get("email")
+        name = sociallogin.account.extra_data.get("name", "")
 
         if not email:
-            messages.error(request, "We couldn't get your email from the social provider. Please sign up manually.")
-            return redirect('accounts:signup_page')  # or wherever you want to send them
-        
+            messages.error(
+                request,
+                "We couldn't get your email from Google. Please sign up manually."
+            )
+            return
 
+        # If already linked → do nothing
         if sociallogin.is_existing:
-            return  # Already linked
+            return
 
-        
         try:
             user = User.objects.get(email=email)
-            
-            
         except User.DoesNotExist:
-            # Auto-create user without going to signup
             user = User.objects.create(
                 username=generate_unique_username_from_email(email),
                 email=email,
@@ -53,11 +47,6 @@ class MySocialAccountAdapter(DefaultSocialAccountAdapter):
             user.set_unusable_password()
             user.save()
 
+        # 🔗 LINK social account to user
         sociallogin.connect(request, user)
-
-        # 🔑 THIS IS THE KEY LINE
-        perform_login(
-            request,
-            user,
-            email_verification="none"
-        )
+        pass

@@ -1,0 +1,137 @@
+{% extends "adminpanel/admin_base.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'css/admin_dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<h2 class="dashboard-title">Admin Dashboard Overview</h2>
+<p class="dashboard-subtitle">
+    Monitor your cloud storage platform performance
+</p>
+
+<!-- KPI CARDS -->
+<div class="storage-cards admin-cards">
+
+    <div class="card">
+        <h4>Total Users</h4>
+        <strong>{{ total_users|intcomma }}</strong>
+        
+    </div>
+
+    <div class="card">
+        <h4>Storage Used</h4>
+        <strong>{{ storage_used|filesizeformat }}</strong>
+        
+    </div>
+
+    <div class="card">
+        <h4>Total Files</h4>
+        <strong>{{ total_files|intcomma }}</strong>
+        
+    </div>
+
+    <div class="card">
+        <h4>Active Servers</h4>
+        <strong>1</strong>
+        
+    </div>
+
+</div>
+
+<!-- CHARTS -->
+<div class="admin-grid">
+
+    <!-- USER ACTIVITY -->
+    <div class="admin-card large">
+        <h4>User Activity</h4>
+        <canvas id="userActivityChart"></canvas>
+    </div>
+
+    <div class="admin-card">
+        <h4>Plan Distribution</h4>
+        <canvas id="planChart"></canvas>
+    </div>
+
+</div>
+
+<!-- RECENT ACTIVITY -->
+<div class="admin-card">
+    <h4>Recent Activity</h4>
+    <ul class="activity-list">
+        {% for file in recent_activity %}
+            <li>
+                <strong>{{ file.user.username }}</strong>
+                uploaded {{ file.file_name }}
+                <small>{{ file.uploaded_at|naturaltime }}</small>
+            </li>
+        {% endfor %}
+    </ul>
+</div>
+
+{% endblock %}
+
+{% block script %}
+
+
+<script>
+/* USER ACTIVITY BAR CHART */
+fetch("/user/admin/api/user-activity/")
+  .then(res => res.json())
+  .then(res => {
+      console.log(res); // DEBUG
+
+      new Chart(document.getElementById("userActivityChart"), {
+          type: "bar",
+          data: {
+              labels: res.labels,   // ✅ ARRAY
+              datasets: [{
+                  label: "Uploads",
+                  data: res.data,   // ✅ ARRAY
+                  backgroundColor: "#7c3aed",
+                  borderRadius: 6
+              }]
+          },
+          options: {
+              responsive: true,
+              maintainAspectRatio: false
+          }
+      });
+  });
+
+
+/* PLAN DISTRIBUTION DONUT */
+fetch("/user/admin/api/plan-distribution/")
+  .then(res => res.json())
+  .then(res => {
+      new Chart(document.getElementById("planChart"), {
+          type: "doughnut",
+          data: {
+              labels: res.labels,
+              datasets: [{
+                  data: res.data,
+                  backgroundColor: [
+                      "#6366f1",
+                      "#22c55e",
+                      "#f59e0b",
+                      "#ef4444"
+                  ],
+                  cutout: "70%"
+              }]
+          },
+          options: {
+              responsive: true,
+              maintainAspectRatio: false
+          }
+      });
+  });
+</script>
+
+
+
+{% endblock %}

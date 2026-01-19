@@ -96,9 +96,18 @@
         </div>
 
         <div class="recent-actions">
-            <a href="{{ file.file_url }}" target="_blank" class="icon-btn download" title="Download">
+            
+            <a href="{{ file.file_url }}" target="_blank" class="icon-btn">
+                <img src="{% static 'images/hidepassword_icon.png' %}" alt="">
+            </a>
+            
+            
+            <a href="{% url 'storageapp:download_file' file.id %}"
+            class="icon-btn download"
+            title="Download">
                 <img src="{% static 'images/download.png' %}" alt="">
             </a>
+            
 
             <button class="icon-btn share"
                     onclick="shareFile('{{ file.id }}')">

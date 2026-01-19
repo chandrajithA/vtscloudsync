@@ -1,0 +1,188 @@
+/* ===============================
+   ADMIN DASHBOARD
+================================ */
+
+.dashboard-title {
+    font-size: 26px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: #1f2937;
+}
+
+.dashboard-subtitle {
+    font-size: 14px;
+    color: #6b7280;
+    margin-bottom: 30px;
+}
+
+/* ===============================
+   KPI CARDS
+================================ */
+
+.admin-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 24px;
+    margin-bottom: 35px;
+}
+
+.admin-cards .card {
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 22px 24px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.admin-cards .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.08);
+}
+
+.admin-cards .card h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #6b7280;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.admin-cards .card strong {
+    font-size: 28px;
+    font-weight: 700;
+    color: #111827;
+    display: block;
+    margin-bottom: 6px;
+}
+
+.admin-cards .card span {
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.admin-cards .green {
+    color: #16a34a;
+}
+
+/* ===============================
+   GRID SECTION
+================================ */
+
+.admin-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 24px;
+    margin-bottom: 30px;
+    align-items: stretch;
+}
+
+@media (max-width: 1100px) {
+    .admin-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ===============================
+   ADMIN CARDS
+================================ */
+
+.admin-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+    height: 360px;           /* 🔴 REQUIRED */
+    position: relative;
+    overflow: hidden;        /* 🔴 REQUIRED */
+}
+
+.admin-card.large {
+    height: 360px;           /* SAME HEIGHT */
+}
+
+.admin-card canvas {
+    width: 100% !important;
+    height: 260px !important;   /* 🔴 REQUIRED */
+}
+
+.admin-card h4 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 18px;
+    color: #111827;
+}
+
+/* ===============================
+   CHART PLACEHOLDER
+================================ */
+
+.chart-placeholder {
+    height: 240px;
+    border-radius: 12px;
+    background: linear-gradient(
+        135deg,
+        #eef2ff,
+        #f8fafc
+    );
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+/* ===============================
+   PLAN DISTRIBUTION
+================================ */
+
+.admin-card ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.admin-card ul li {
+    padding: 10px 0;
+    font-size: 14px;
+    color: #374151;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.admin-card ul li:last-child {
+    border-bottom: none;
+}
+
+/* ===============================
+   RECENT ACTIVITY
+================================ */
+
+.activity-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.activity-list li {
+    padding: 14px 0;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 14px;
+    color: #374151;
+}
+
+.activity-list li strong {
+    font-weight: 600;
+    color: #111827;
+}
+
+.activity-list li small {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.activity-list li:last-child {
+    border-bottom: none;
+}

@@ -1,4 +1,4 @@
-{% extends 'storageapp/base.html' %}
+{% extends base_template %}
 {% load static %}
 {% load humanize %}
 
@@ -77,15 +77,16 @@
 
             <!-- VIEW -->
             <div class="recent-actions">
+               
                 <a href="{{ s.file.file_url }}" target="_blank" title="View" class="icon-btn">
                     <img src="{% static 'images/hidepassword_icon.png' %}">
                 </a>
-
+             
 
             
-                    <a href="{% url 'storageapp:download_file' s.file.id %}" class="icon-btn">
-                        <img src="{% static 'images/download.png' %}">
-                    </a>
+                <a href="{% url 'storageapp:download_file' s.file.id %}" class="icon-btn">
+                    <img src="{% static 'images/download.png' %}">
+                </a>
             
 
                 <!-- DELETE -->

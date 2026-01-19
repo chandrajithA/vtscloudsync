@@ -5,6 +5,7 @@ app_name = 'storageapp'
 
 urlpatterns = [
     path('dashboard/', dashboard, name='dashboard'),   
+    path("admin/dashboard/", admin_dashboard, name="admin_dashboard"),
     path('upload/', upload_page, name='upload_page'),
     path('shared/', shared_files, name='shared_files'),  
     path("file/<int:file_id>/share/", share_file_api, name="share_file"),
@@ -19,4 +20,6 @@ urlpatterns = [
     path("trash/restore-all/", restore_all, name="restore_all"),
     path("trash/empty/", empty_trash, name="empty_trash"),
     path('settings/', settings, name='settings'), 
+    path("admin/api/user-activity/", admin_user_activity_api),
+    path("admin/api/plan-distribution/", admin_plan_distribution_api),
 ]

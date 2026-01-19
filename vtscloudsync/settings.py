@@ -255,7 +255,7 @@ MEDIA_URL = '/media/'
 
 
 LOGIN_URL = '/accounts/signin_page/'
-LOGIN_REDIRECT_URL = '/user/dashboard/'
+LOGIN_REDIRECT_URL = "/accounts/post-login/"
 LOGOUT_REDIRECT_URL = ''
 
 
@@ -267,6 +267,10 @@ RAZORPAY_REFUND_WEBHOOK_SECRET = env("RAZORPAY_REFUND_WEBHOOK_SECRET")
 CSRF_TRUSTED_ORIGINS = [
     "https://cloudsync-6aiv.onrender.com",
 ]
+
+
+FILE_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024 * 1024
+DATA_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024 * 1024
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 USE_X_FORWARDED_HOST = True

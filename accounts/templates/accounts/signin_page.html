@@ -53,10 +53,10 @@
                 {% endfor %}
                 {% endif %}
 
-                <input type="hidden" name="role" value="{{ prefill.role }}" id="selectedRole">
+                <input type="hidden" name="role" value="{{ prefill.role|default:'user'}}" id="selectedRole">
 
                 <label class='label'>User Id</label><span class="requiredfieldastrick">*</span>
-                <input class='input' type="text" name="username" value="{{ prefill.username }}" placeholder="user@gmail.com" required>
+                <input class='input' type="text" name="username" value="{{ prefill.username }}" placeholder="Enter User ID" required>
 
                 <label class='label'>Password</label><span class="requiredfieldastrick">*</span>
                 <div class="password-wrap">
@@ -129,6 +129,7 @@
 
         // 1️⃣ Restore role from backend (prefill)
         const currentRole = roleInput.value || "user";
+        roleInput.value = currentRole;
 
         roleButtons.forEach(btn => {
             if (btn.dataset.role === currentRole) {
