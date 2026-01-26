@@ -20,6 +20,8 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from accounts.models import UserLoginActivity
 from django.db.models.functions import TruncMonth
+from django.db.models.functions import TruncDate
+from datetime import date
 
 User = get_user_model()
 
@@ -95,19 +97,37 @@ def admin_user_activity_api(request):
     if not request.user.is_superuser:
         return JsonResponse({"error": "Unauthorized"}, status=403)
 
-    today = timezone.now().date()
+    # ✅ Use local date (Asia/Kolkata safe)
+    today = timezone.localdate()
+
+    # Last 7 IST dates
     last_7_days = [today - timedelta(days=i) for i in range(6, -1, -1)]
+
+    # ✅ Group logins by local date
+    qs = (
+        UserLoginActivity.objects
+        .annotate(
+            login_date=TruncDate(
+                "login_at",
+                tzinfo=timezone.get_current_timezone()
+            )
+        )
+        .values("login_date")
+        .annotate(count=Count("id"))
+    )
+
+    # Convert queryset → dict
+    data_map = {
+        item["login_date"]: item["count"]
+        for item in qs
+    }
 
     labels = []
     data = []
 
     for day in last_7_days:
-        count = UserLoginActivity.objects.filter(
-            login_at__date=day
-        ).count()
-
-        labels.append(day.strftime("%a"))  # Sun, Mon, Tue
-        data.append(count)
+        labels.append(day.strftime("%a"))  # Sun, Mon
+        data.append(data_map.get(day, 0))
 
     return JsonResponse({
         "labels": labels,
@@ -139,35 +159,42 @@ def admin_storage_growth_api(request):
     if not request.user.is_superuser:
         return JsonResponse({"error": "Unauthorized"}, status=403)
 
-    today = timezone.now()
+    # ✅ Always use timezone-aware "now"
+    today = timezone.localdate()   # IST-safe
 
-    # 🔹 Generate last 12 calendar months
+    # First day of current month (IST)
+    current_month = today.replace(day=1)
+
+    # Generate last 12 calendar months (IST-safe)
     months = []
-    for i in range(11, -1, -1):
-        month = (today.replace(day=1) - timezone.timedelta(days=30 * i))
-        months.append(month)
+    year, month = current_month.year, current_month.month
+    for _ in range(12):
+        months.insert(0, date(year, month, 1))
+        month -= 1
+        if month == 0:
+            month = 12
+            year -= 1
 
-    # 🔹 Query storage grouped by month
+    # 🔹 Truncate uploaded_at in DB (UTC → IST handled by Django)
     qs = (
         CloudFile.objects
         .filter(is_deleted=False)
-        .annotate(month=TruncMonth("uploaded_at"))
+        .annotate(month=TruncMonth("uploaded_at", tzinfo=timezone.get_current_timezone()))
         .values("month")
         .annotate(total_size=Sum("file_size"))
     )
 
     storage_map = {
-        item["month"].strftime("%Y-%m"): item["total_size"]
+        item["month"].date(): item["total_size"]
         for item in qs
     }
 
     labels = []
     data = []
 
-    for month in months:
-        key = month.strftime("%Y-%m")
-        labels.append(month.strftime("%b %Y"))   # Jan, Feb, Mar
-        size = storage_map.get(key, 0)
+    for m in months:
+        labels.append(m.strftime("%b %Y"))   # Jan 2026
+        size = storage_map.get(m, 0)
         mb = size / (1024 * 1024)
         data.append(round(mb, 2))
 
