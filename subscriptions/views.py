@@ -6,11 +6,22 @@ from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.http import JsonResponse
 from .models import Plan, Payment
+from django.urls import reverse
 
 # Create your views here.
 
-@login_required
+
+def upgrade(request):
+    if request.user.is_authenticated:
+        return redirect('subscriptions:upgrade_page')
+    else: 
+        next_url = reverse('subscriptions:upgrade_page')
+        request.session['next_url'] = next_url
+        return redirect('accounts:signin_page')
+
+
 def upgrade_page(request):
+    
     subscription = UserSubscription.objects.select_related("plan").get(user=request.user)
     current_plan = subscription.plan
 

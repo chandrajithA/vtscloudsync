@@ -73,7 +73,7 @@
 
 <div class="recent-grid">
     {% for file in recent_files %}
-    <div class="recent-card" id="file-{{ file.id }}">
+    <div class="recent-card" id="file-{{ file.id }}" data-name="{{ file.file_name|lower }}">
 
         <div class="recent-icon {{ file.file_type }}">
             {% if file.file_type == "image" %}
@@ -127,6 +127,10 @@
     </div>
     {% endfor %}
 </div>
+
+<p id="noRecentResults" class="empty" style="display:none;">
+    No files found
+</p>
 
 {% endblock %}
 
@@ -202,6 +206,39 @@ function moveToTrash(fileId) {
     })
     .catch(() => alert("Error occurred"));
 }
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const searchInput = document.getElementById("globalSearchInput");
+    if (!searchInput) return;
+
+    const fileCards = document.querySelectorAll(".recent-card");
+    const emptyMsg = document.getElementById("noRecentResults");
+
+    searchInput.addEventListener("input", function () {
+        const query = this.value.toLowerCase().trim();
+        let visibleCount = 0;
+
+        fileCards.forEach(card => {
+            const fileName = card.dataset.name;
+
+            if (!query || fileName.includes(query)) {
+                card.style.display = "flex";
+                visibleCount++;
+            } else {
+                card.style.display = "none";
+            }
+        });
+
+        // ✅ Show "No files found" only when searching & no matches
+        if (query && visibleCount === 0) {
+            emptyMsg.style.display = "block";
+        } else {
+            emptyMsg.style.display = "none";
+        }
+    });
+
+});
 
 </script>
 {% endblock %}

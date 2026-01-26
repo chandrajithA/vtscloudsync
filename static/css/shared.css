@@ -190,3 +190,8 @@
     align-self: flex-end;
 }
 
+.empty{
+    margin-top: 15px;
+    color: var(--grey);
+}
+

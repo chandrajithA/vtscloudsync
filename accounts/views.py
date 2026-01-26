@@ -14,7 +14,7 @@ def signin_page(request):
             next_url = request.GET.get('next', '') or request.session.pop('next_url', '')
             prefill = request.session.pop('loginprefill', None)
             context = {
-                            'next': next_url,
+                            'next_url': next_url,
                             'prefill':prefill,
             }
             return render(request, 'accounts/signin_page.html', context)

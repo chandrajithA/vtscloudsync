@@ -98,10 +98,16 @@
             
         </div>
 
+        
+
     </div>
-    {% empty %}
-        <p class="empty">No files uploaded</p>
+    
+        
     {% endfor %}
+
+    <p id="noSearchResults" class="empty" style="display:none;">
+        No files found
+    </p>
 </div>
 
 
@@ -162,6 +168,41 @@ function shareFile(fileId) {
     })
     .catch(() => alert("❌ Error occurred"));
 }
+
+document.addEventListener("DOMContentLoaded", function () {
+    const searchInput = document.getElementById("globalSearchInput");
+    if (!searchInput) return;
+
+    const fileRows = document.querySelectorAll(".file-row");
+    const emptyMsg = document.getElementById("noSearchResults");
+
+    searchInput.addEventListener("input", function () {
+        const query = this.value.toLowerCase().trim();
+        let visibleCount = 0;
+
+        fileRows.forEach(row => {
+            const fileName = row
+                .querySelector(".file-name")
+                .innerText
+                .toLowerCase();
+
+            if (!query || fileName.includes(query)) {
+                row.style.display = "grid";   // restore rows
+                visibleCount++;
+            } else {
+                row.style.display = "none";
+            }
+        });
+
+        // ✅ Show "No files" ONLY when search has text and no match
+        if (query && visibleCount === 0) {
+            emptyMsg.style.display = "block";
+        } else {
+            emptyMsg.style.display = "none";
+        }
+    });
+});
+
 
 </script>
 {% endblock %}

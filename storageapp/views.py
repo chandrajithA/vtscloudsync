@@ -22,6 +22,9 @@ from accounts.models import UserLoginActivity
 from django.db.models.functions import TruncMonth
 from django.db.models.functions import TruncDate
 from datetime import date
+from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib.auth import update_session_auth_hash
+from django.contrib import messages
 
 User = get_user_model()
 
@@ -511,7 +514,7 @@ def trash_stats(user):
 
 
 @login_required
-def settings(request):
+def settings_page(request):
 
     user = request.user
 
@@ -528,7 +531,7 @@ def settings(request):
                 user.profile_picture.delete(save=False)
                 user.profile_picture = None
                 user.save()
-            return redirect("storageapp:settings")
+            return redirect("storageapp:settings_page")
 
         # ✅ UPDATE PROFILE
         if request.FILES.get("profile_picture"):
@@ -540,7 +543,7 @@ def settings(request):
         user.phone = request.POST.get("phone", "")
         user.save()
 
-        return redirect("storageapp:settings")
+        return redirect("storageapp:settings_page")
 
     return render(request, "storageapp/settings.html",{"base_template": base_template})
     

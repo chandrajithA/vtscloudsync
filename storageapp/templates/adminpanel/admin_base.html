@@ -31,7 +31,7 @@
         <div class="search-box">
         <input
             type="text"
-           
+            id="globalSearchInput"
             placeholder="Search files, folders..."
             
         >
@@ -51,9 +51,9 @@
     <a href="{% url 'storageapp:upload_page' %}" class="nav-item {% if request.resolver_match.url_name == 'upload_page' %}active{% endif %}"><img src="{% static 'images/upload.png' %}" alt=""> Upload</a>
     <a href="{% url 'storageapp:myfiles' %}" class="nav-item {% if request.resolver_match.url_name == 'myfiles' %}active{% endif %}"><img src="{% static 'images/myfile.png' %}" alt=""> My Files</a>
     <a href="{% url 'storageapp:shared_files' %}" class="nav-item {% if request.resolver_match.url_name == 'shared_files' %}active{% endif %}"><img src="{% static 'images/share.png' %}" alt=""> Shared</a>
-    <a href="" class="nav-item {% if request.resolver_match.url_name == 'reports' %}active{% endif %}"><img src="{% static 'images/shareicon.png' %}" alt=""> Reports</a>
+    {% comment %} <a href="" class="nav-item {% if request.resolver_match.url_name == 'reports' %}active{% endif %}"><img src="{% static 'images/shareicon.png' %}" alt=""> Reports</a> {% endcomment %}
     <a href="{% url 'storageapp:trash' %}" class="nav-item {% if request.resolver_match.url_name == 'trash' %}active{% endif %}"><img src="{% static 'images/trash.png' %}" alt=""> Trash</a>
-    <a href="{% url 'storageapp:settings' %}" class="nav-item {% if request.resolver_match.url_name == 'settings' %}active{% endif %}"><img src="{% static 'images/settings.png' %}" alt=""> Settings</a>
+    <a href="{% url 'storageapp:settings_page' %}" class="nav-item {% if request.resolver_match.url_name == 'settings' %}active{% endif %}"><img src="{% static 'images/settings.png' %}" alt=""> Settings</a>
     <a href="{% url 'accounts:user_logout' %}" class="nav-item"><img src="{% static 'images/logout.png' %}" alt=""> Logout</a>
 
     <div class="storage-box">

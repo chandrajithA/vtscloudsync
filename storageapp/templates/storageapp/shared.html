@@ -99,6 +99,10 @@
         </div>
         {% endfor %}
 
+        <p id="noSharedResults" class="empty" style="display:none;">
+            No files found
+        </p>
+
     </div>
 </div>
 {% endblock %}
@@ -124,6 +128,45 @@ function removeShared(sharedId) {
     })
     .catch(() => alert("Error occurred"));
 }
+
+document.addEventListener("DOMContentLoaded", function () {
+    const searchInput = document.getElementById("globalSearchInput");
+    if (!searchInput) return;
+
+    const sharedRows = document.querySelectorAll(".shared-row");
+    const noResults = document.getElementById("noSharedResults");
+
+    searchInput.addEventListener("input", function () {
+        const query = this.value.toLowerCase().trim();
+        let visibleCount = 0;
+
+        sharedRows.forEach(row => {
+            const fileName = row
+                .querySelector(".shared-file-name")
+                .innerText
+                .toLowerCase();
+
+            const owner = row
+                .querySelector("span")
+                .innerText
+                .toLowerCase();
+
+            if (fileName.includes(query) || owner.includes(query)) {
+                row.style.display = "grid";
+                visibleCount++;
+            } else {
+                row.style.display = "none";
+            }
+        });
+
+        // ✅ Show / hide "No files found"
+        if (query && visibleCount === 0) {
+            noResults.style.display = "block";
+        } else {
+            noResults.style.display = "none";
+        }
+    });
+});
 
 </script>
 {% endblock %}
