@@ -70,8 +70,9 @@ def dashboard(request):
 @user_passes_test(is_admin)
 def admin_dashboard(request):
     total_users = User.objects.count()
-    total_files = CloudFile.objects.count()
-    storage_used = CloudFile.objects.aggregate(total=models.Sum("file_size"))["total"] or 0
+    active_files = CloudFile.objects.filter(is_deleted=False)
+    total_files = active_files.count()
+    storage_used = active_files.aggregate(total=models.Sum("file_size"))["total"] or 0
 
     # Plan distribution
     plan_stats = (
@@ -217,7 +218,7 @@ def upload_page(request):
         # 👇 IMPORTANT PART
         last_uploads = (
             CloudFile.objects
-            .filter(user=request.user)
+            .filter(user=request.user, is_deleted=False)
             .order_by("-uploaded_at")[:10]
         )
 

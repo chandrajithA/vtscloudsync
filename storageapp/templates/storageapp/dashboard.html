@@ -96,10 +96,11 @@
         </div>
 
         <div class="recent-actions">
-            
+            {% if file.file_type == "other" %}
             <a href="{{ file.file_url }}" target="_blank" class="icon-btn">
                 <img src="{% static 'images/hidepassword_icon.png' %}" alt="">
             </a>
+            {% endif %}
             
             
             <a href="{% url 'storageapp:download_file' file.id %}"
@@ -107,11 +108,19 @@
             title="Download">
                 <img src="{% static 'images/download.png' %}" alt="">
             </a>
+
+            <a href="javascript:void(0)"
+                title="Share"
+                class="icon-btn"
+                onclick="openShareModal('{{ file.file_url }}')">
+                    <img src="{% static 'images/shareicon.png' %}" alt="Share">
+            </a>
             
 
             <button class="icon-btn share"
+                title="Give access"
                     onclick="shareFile('{{ file.id }}')">
-                <img src="{% static 'images/shareicon.png' %}">
+                <img src="{% static 'images/share.png' %}">
             </button>
 
             <button 
@@ -131,6 +140,47 @@
 <p id="noRecentResults" class="empty" style="display:none;">
     No files found
 </p>
+
+
+<div id="shareModal" class="share-modal">
+    <div class="share-box">
+        <div class="share-header">
+            <h3>Share file</h3>
+            <button class="close-btn" onclick="closeShareModal()">✕</button>
+        </div>
+
+        <p class="share-subtitle">
+            Anyone with this link can view the file
+        </p>
+
+        <div class="share-icons">
+            <a id="share-whatsapp" target="_blank" class="share-item whatsapp">
+                <img src="{% static 'images/whatsapp.png' %}">
+                <span>WhatsApp</span>
+            </a>
+
+            <a id="share-facebook" target="_blank" class="share-item facebook">
+                <img src="{% static 'images/facebook.png' %}">
+                <span>Facebook</span>
+            </a>
+
+            <a id="share-twitter" target="_blank" class="share-item twitter">
+                <img src="{% static 'images/twitter.png' %}">
+                <span>Twitter</span>
+            </a>
+
+            <a id="share-telegram" target="_blank" class="share-item telegram">
+                <img src="{% static 'images/telegram.png' %}">
+                <span>Telegram</span>
+            </a>
+
+            <button onclick="copyLink()" class="share-item copy">
+                <img src="{% static 'images/link.png' %}">
+                <span>Copy link</span>
+            </button>
+        </div>
+    </div>
+</div>
 
 {% endblock %}
 
@@ -205,6 +255,36 @@ function moveToTrash(fileId) {
         document.getElementById("oth-size").innerText = formatBytes(data.stats.other.size);
     })
     .catch(() => alert("Error occurred"));
+}
+
+
+let currentShareUrl = "";
+
+function openShareModal(url) {
+    currentShareUrl = url;
+
+    document.getElementById("share-whatsapp").href =
+        `https://wa.me/?text=${encodeURIComponent(url)}`;
+
+    document.getElementById("share-facebook").href =
+        `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+
+    document.getElementById("share-twitter").href =
+        `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}`;
+
+    document.getElementById("share-telegram").href =
+        `https://t.me/share/url?url=${encodeURIComponent(url)}`;
+
+    document.getElementById("shareModal").style.display = "flex";
+}
+
+function closeShareModal() {
+    document.getElementById("shareModal").style.display = "none";
+}
+
+function copyLink() {
+    navigator.clipboard.writeText(currentShareUrl);
+    alert("Link copied to clipboard");
 }
 
 document.addEventListener("DOMContentLoaded", function () {
