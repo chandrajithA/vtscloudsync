@@ -58,21 +58,31 @@
         <canvas id="planChart"></canvas>
     </div>
 
+    <div class="admin-card">
+        <h4>Storage Growth</h4>
+        <p style="margin-bottom: 15px;">Total storage usage overtime (MB)</p>
+        <canvas id="storageGrowthChart"></canvas>
+    </div>
+
+    <!-- RECENT ACTIVITY -->
+    <div class="admin-card">
+        <h4>Recent Activity</h4>
+        <ul class="activity-list">
+            {% for file in recent_activity %}
+                <li>
+                    <strong>{{ file.user.username }}</strong>
+                    uploaded {{ file.file_name }}
+                    <small>{{ file.uploaded_at|naturaltime }}</small>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+
 </div>
 
-<!-- RECENT ACTIVITY -->
-<div class="admin-card">
-    <h4>Recent Activity</h4>
-    <ul class="activity-list">
-        {% for file in recent_activity %}
-            <li>
-                <strong>{{ file.user.username }}</strong>
-                uploaded {{ file.file_name }}
-                <small>{{ file.uploaded_at|naturaltime }}</small>
-            </li>
-        {% endfor %}
-    </ul>
-</div>
+
+
+
 
 {% endblock %}
 
@@ -81,55 +91,121 @@
 
 <script>
 /* USER ACTIVITY BAR CHART */
-fetch("/user/admin/api/user-activity/")
-  .then(res => res.json())
-  .then(res => {
-      console.log(res); // DEBUG
+document.addEventListener("DOMContentLoaded", function () {
 
-      new Chart(document.getElementById("userActivityChart"), {
-          type: "bar",
-          data: {
-              labels: res.labels,   // ✅ ARRAY
-              datasets: [{
-                  label: "Uploads",
-                  data: res.data,   // ✅ ARRAY
-                  backgroundColor: "#7c3aed",
-                  borderRadius: 6
-              }]
-          },
-          options: {
-              responsive: true,
-              maintainAspectRatio: false
-          }
-      });
-  });
+    const ctx = document
+        .getElementById("userActivityChart")
+        .getContext("2d");
+
+    fetch("/user/admin/api/user-activity/")
+        .then(res => res.json())
+        .then(data => {
+            new Chart(ctx, {
+                type: "line",
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: "User Logins",
+                        data: data.data,
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0,      // ✅ NO DECIMALS
+                                stepSize: 1        // ✅ INCREMENT BY 1
+                            }
+                        }
+                    }
+                }
+            });
+        });
+
+});
 
 
-/* PLAN DISTRIBUTION DONUT */
-fetch("/user/admin/api/plan-distribution/")
-  .then(res => res.json())
-  .then(res => {
-      new Chart(document.getElementById("planChart"), {
-          type: "doughnut",
-          data: {
-              labels: res.labels,
-              datasets: [{
-                  data: res.data,
-                  backgroundColor: [
-                      "#6366f1",
-                      "#22c55e",
-                      "#f59e0b",
-                      "#ef4444"
-                  ],
-                  cutout: "70%"
-              }]
-          },
-          options: {
-              responsive: true,
-              maintainAspectRatio: false
-          }
-      });
-  });
+/* PLAN DISTRIBUTION DONUT */ 
+fetch("/user/admin/api/plan-distribution/") 
+    .then(res => res.json()) 
+    .then(res => { 
+        new Chart(document.getElementById("planChart"), 
+            { type: "doughnut", data: 
+                { labels: res.labels, 
+                datasets: [{ data: res.data, 
+                    backgroundColor: [ "#6366f1", "#22c55e", "#f59e0b", "#ef4444" ], 
+                    cutout: "70%" }] 
+                }, 
+                options: 
+                { responsive: true, 
+                    maintainAspectRatio: false } 
+                }); 
+            });
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const ctx = document
+        .getElementById("storageGrowthChart")
+        .getContext("2d");
+
+    fetch("/user/admin/api/storage-growth/")
+        .then(res => res.json())
+        .then(data => {
+            new Chart(ctx, {
+                type: "bar",
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        data: data.data,
+                        backgroundColor: "#6366f1",
+                        borderRadius: 4,
+                        barThickness: 10   // 🔹 thin bars like Figma
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => `${ctx.raw} MB`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: true,
+                                color: "#eef0ff",   // 🔹 light vertical grid lines
+                                drawBorder: false
+                            },
+                            ticks: {
+                                maxRotation: 0,
+                                autoSkip: true
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                display: false      // 🔹 no horizontal grid
+                            },
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    }
+                }
+            });
+        });
+
+});
 </script>
 
 

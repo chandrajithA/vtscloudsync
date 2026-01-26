@@ -18,6 +18,8 @@ from django.http import Http404
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
+from accounts.models import UserLoginActivity
+from django.db.models.functions import TruncMonth
 
 User = get_user_model()
 
@@ -100,17 +102,17 @@ def admin_user_activity_api(request):
     data = []
 
     for day in last_7_days:
-        count = CloudFile.objects.filter(
-            uploaded_at__date=day
+        count = UserLoginActivity.objects.filter(
+            login_at__date=day
         ).count()
-        labels.append(day.strftime("%d %b"))
+
+        labels.append(day.strftime("%a"))  # Sun, Mon, Tue
         data.append(count)
 
     return JsonResponse({
         "labels": labels,
         "data": data
     })
-
 
 @login_required
 def admin_plan_distribution_api(request):
@@ -125,6 +127,49 @@ def admin_plan_distribution_api(request):
 
     labels = [x["plan__name"] for x in qs]
     data = [x["count"] for x in qs]
+
+    return JsonResponse({
+        "labels": labels,
+        "data": data
+    })
+
+
+@login_required
+def admin_storage_growth_api(request):
+    if not request.user.is_superuser:
+        return JsonResponse({"error": "Unauthorized"}, status=403)
+
+    today = timezone.now()
+
+    # 🔹 Generate last 12 calendar months
+    months = []
+    for i in range(11, -1, -1):
+        month = (today.replace(day=1) - timezone.timedelta(days=30 * i))
+        months.append(month)
+
+    # 🔹 Query storage grouped by month
+    qs = (
+        CloudFile.objects
+        .filter(is_deleted=False)
+        .annotate(month=TruncMonth("uploaded_at"))
+        .values("month")
+        .annotate(total_size=Sum("file_size"))
+    )
+
+    storage_map = {
+        item["month"].strftime("%Y-%m"): item["total_size"]
+        for item in qs
+    }
+
+    labels = []
+    data = []
+
+    for month in months:
+        key = month.strftime("%Y-%m")
+        labels.append(month.strftime("%b %Y"))   # Jan, Feb, Mar
+        size = storage_map.get(key, 0)
+        mb = size / (1024 * 1024)
+        data.append(round(mb, 2))
 
     return JsonResponse({
         "labels": labels,

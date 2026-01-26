@@ -90,6 +90,7 @@ def signin_page(request):
         else:
             # Log in the user
             login(request, user, 'django.contrib.auth.backends.ModelBackend')
+            UserLoginActivity.objects.create(user=user)
             if remember_me == "on":
                 request.session.set_expiry(6 * 60 * 60)  
             else:
@@ -222,6 +223,7 @@ def signup_page(request):
 
             # 3️⃣ Login user
             login(request, user, 'django.contrib.auth.backends.ModelBackend')
+            UserLoginActivity.objects.create(user=user)
             messages.success(request, "User Registrated successful.")
             return redirect('storageapp:dashboard')
         else:
