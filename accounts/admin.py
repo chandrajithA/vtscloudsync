@@ -29,3 +29,31 @@ class CustomUserAdmin(UserAdmin):
 
     search_fields = ("username", "email")
     ordering = ("username",)
+
+
+@admin.register(UserLoginActivity)
+class UserLoginActivityAdmin(admin.ModelAdmin):
+    list_display = (
+        "user",
+        "login_at",
+    )
+
+    list_filter = (
+        "login_at",
+    )
+
+    search_fields = (
+        "user__username",
+        "user__email",
+    )
+
+    ordering = ("-login_at",)
+
+    date_hierarchy = "login_at"
+
+    readonly_fields = (
+        "user",
+        "login_at",
+    )
+
+    list_per_page = 50
