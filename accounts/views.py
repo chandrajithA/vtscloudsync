@@ -95,7 +95,6 @@ def signin_page(request):
                 request.session.set_expiry(6 * 60 * 60)  
             else:
                 request.session.set_expiry(0)
-            messages.success(request, f"Login successful.")
             if user.is_superuser:
                 return redirect(next_url or 'storageapp:admin_dashboard')
             else:
@@ -224,8 +223,10 @@ def signup_page(request):
             # 3️⃣ Login user
             login(request, user, 'django.contrib.auth.backends.ModelBackend')
             UserLoginActivity.objects.create(user=user)
-            messages.success(request, "User Registrated successful.")
-            return redirect('storageapp:dashboard')
+            if user.is_superuser:
+                return redirect('storageapp:admin_dashboard')
+            else:
+                return redirect('storageapp:dashboard')
         else:
             prefill = {
                 'name': name,
@@ -242,7 +243,6 @@ def signup_page(request):
 @login_required
 def user_logout(request):
     logout(request)  
-    messages.success(request, "Signed out successfully.")
     return redirect('accounts:signin_page')
 
 

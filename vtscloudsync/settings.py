@@ -43,7 +43,6 @@ else:
 
 ALLOWED_HOSTS = [
     "cloudsync-6aiv.onrender.com",
-    ".onrender.com",
     "localhost",
     "127.0.0.1",
 ]
@@ -253,7 +252,7 @@ cloudinary.config(
 MEDIA_URL = '/media/'
 
 
-LOGIN_URL = '/accounts/signin_page/'
+LOGIN_URL = '/accounts/SignIn/'
 LOGIN_REDIRECT_URL = "/accounts/post-login/"
 LOGOUT_REDIRECT_URL = '/accounts/SignIn/'
 

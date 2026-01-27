@@ -1,6 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required, user_passes_test
-from .models import *
+from django.contrib.auth.decorators import login_required
 import cloudinary.uploader
 from .models import *
 import mimetypes
@@ -13,18 +12,14 @@ from django.contrib.auth import get_user_model
 import requests
 from django.http import StreamingHttpResponse, Http404
 from subscriptions.models import UserSubscription
-from django.shortcuts import redirect
-from django.http import Http404
-from django.utils import timezone
-from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from accounts.models import UserLoginActivity
 from django.db.models.functions import TruncMonth
 from django.db.models.functions import TruncDate
 from datetime import date
-from django.contrib.auth.forms import PasswordChangeForm
-from django.contrib.auth import update_session_auth_hash
-from django.contrib import messages
+from django.urls import reverse
+
+
 
 User = get_user_model()
 
@@ -33,67 +28,76 @@ def is_admin(user):
 
 MAX_SIMPLE_UPLOAD = 4 * 1024 * 1024
 
-@login_required
+
 def dashboard(request):
-    user = request.user
+    if request.user.is_authenticated and not request.user.is_superuser:
+        user = request.user
 
-    # Exclude trashed files
-    files = CloudFile.objects.filter(user=user, is_deleted=False)
+        # Exclude trashed files
+        files = CloudFile.objects.filter(user=user, is_deleted=False)
 
-    # ---- STORAGE CARDS ----
-    stats = {
-        "document": files.filter(file_type="document"),
-        "image": files.filter(file_type="image"),
-        "video": files.filter(file_type="video"),
-        "other": files.filter(file_type="other"),
-    }
-
-    cards = {}
-    for key, qs in stats.items():
-        cards[key] = {
-            "count": qs.count(),
-            "size": qs.aggregate(total=Sum("file_size"))["total"] or 0
+        # ---- STORAGE CARDS ----
+        stats = {
+            "document": files.filter(file_type="document"),
+            "image": files.filter(file_type="image"),
+            "video": files.filter(file_type="video"),
+            "other": files.filter(file_type="other"),
         }
 
-    # ---- RECENT FILES ----
-    recent_files = files.order_by("-uploaded_at")[:6]
+        cards = {}
+        for key, qs in stats.items():
+            cards[key] = {
+                "count": qs.count(),
+                "size": qs.aggregate(total=Sum("file_size"))["total"] or 0
+            }
 
-    return render(request, "storageapp/dashboard.html", {
-        "cards": cards,
-        "recent_files": recent_files
-    })
+        # ---- RECENT FILES ----
+        recent_files = files.order_by("-uploaded_at")[:6]
+
+        return render(request, "storageapp/dashboard.html", {
+            "cards": cards,
+            "recent_files": recent_files
+        })
+    elif request.user.is_authenticated and request.user.is_superuser:
+        return redirect('storageapp:admin_dashboard')
+    else:
+        return redirect('accounts:signin_page')
 
 
 
 
 @login_required
-@user_passes_test(is_admin)
 def admin_dashboard(request):
-    total_users = User.objects.count()
-    active_files = CloudFile.objects.filter(is_deleted=False)
-    total_files = active_files.count()
-    storage_used = active_files.aggregate(total=models.Sum("file_size"))["total"] or 0
+    if request.user.is_authenticated and request.user.is_superuser:
+        total_users = User.objects.count()
+        active_files = CloudFile.objects.filter(is_deleted=False)
+        total_files = active_files.count()
+        storage_used = active_files.aggregate(total=models.Sum("file_size"))["total"] or 0
 
-    # Plan distribution
-    plan_stats = (
-        UserSubscription.objects
-        .values("plan__name")
-        .annotate(count=Count("id"))
-    )
+        # Plan distribution
+        plan_stats = (
+            UserSubscription.objects
+            .values("plan__name")
+            .annotate(count=Count("id"))
+        )
 
-    recent_activity = (
-        CloudFile.objects
-        .select_related("user")
-        .order_by("-uploaded_at")[:5]
-    )
+        recent_activity = (
+            CloudFile.objects
+            .select_related("user")
+            .order_by("-uploaded_at")[:5]
+        )
 
-    return render(request, "adminpanel/dashboard.html", {
-        "total_users": total_users,
-        "total_files": total_files,
-        "storage_used": storage_used,
-        "plan_stats": plan_stats,
-        "recent_activity": recent_activity,
-    })
+        return render(request, "adminpanel/dashboard.html", {
+            "total_users": total_users,
+            "total_files": total_files,
+            "storage_used": storage_used,
+            "plan_stats": plan_stats,
+            "recent_activity": recent_activity,
+        })
+    elif request.user.is_authenticated and not request.user.is_superuser:
+        return redirect('storageapp:dashboard')
+    else:
+        return redirect('accounts:signin_page')
 
 
 @login_required
@@ -137,6 +141,7 @@ def admin_user_activity_api(request):
         "labels": labels,
         "data": data
     })
+
 
 @login_required
 def admin_plan_distribution_api(request):
@@ -208,191 +213,204 @@ def admin_storage_growth_api(request):
     })
 
 
-@login_required
+
 def upload_page(request):
-    if request.user.is_superuser:
-        base_template = "adminpanel/admin_base.html"
-    else:
-        base_template = "storageapp/base.html"
-    if request.method == 'GET':
-        # 👇 IMPORTANT PART
-        last_uploads = (
-            CloudFile.objects
-            .filter(user=request.user, is_deleted=False)
-            .order_by("-uploaded_at")[:10]
-        )
-
-        return render(
-            request,
-            "storageapp/upload.html",
-            {"last_uploads": last_uploads,
-             "base_template": base_template},
-        )
-        
-    if request.method == 'POST':
-        files = request.FILES.getlist('file')
-
-        if not files:
-            return render(request, "storageapp/upload.html", {
-                "error": "Please select a file",
-                "base_template": base_template
-            })
-    
-        
-        for file in files:
-        
-            mime_type, _ = mimetypes.guess_type(file.name)
-
-            uploaded_file = None
-            file_url = None
-            public_id = None
-
-            if mime_type and mime_type.startswith("image"):
-                file_type = "image"
-                if file.size > MAX_SIMPLE_UPLOAD:
-                    # 🔥 LARGE FILE
-                    result = cloudinary.uploader.upload_large(
-                        file,
-                        resource_type="raw",
-                        folder="images",
-                        use_filename=True,
-                        unique_filename=True,
-                        chunk_size=6000000
-                    )
-                    file_url = result["secure_url"]
-                    public_id = result["public_id"] 
-                else:
-                    # 🔹 SMALL FILE
-                    result = cloudinary.uploader.upload(
-                        file,
-                        resource_type="raw",
-                        folder="images",
-                        use_filename=True,
-                        unique_filename=True,
-                    )
-                    file_url = result["secure_url"]
-                    public_id = result["public_id"] 
-
-            # ✅ VIDEO
-            elif mime_type and mime_type.startswith("video"):
-                file_type = "video"
-                if file.size > MAX_SIMPLE_UPLOAD:
-                    # 🔥 LARGE FILE
-                    result = cloudinary.uploader.upload_large(
-                        file,
-                        resource_type="raw",
-                        folder="videos",
-                        use_filename=True,
-                        unique_filename=True,
-                        chunk_size=6000000
-                    )
-                    file_url = result["secure_url"]
-                    public_id = result["public_id"] 
-                else:
-                    # 🔹 SMALL FILE
-                    result = cloudinary.uploader.upload(
-                        file,
-                        resource_type="raw",
-                        folder="videos",
-                        use_filename=True,
-                        unique_filename=True,
-                    )
-                    file_url = result["secure_url"]
-                    public_id = result["public_id"] 
-                
-
-            # ✅ PDF
-            elif mime_type == "application/pdf":
-                file_type = "document"
-                if file.size > MAX_SIMPLE_UPLOAD:
-                    # 🔥 LARGE FILE
-                    result = cloudinary.uploader.upload_large(
-                        file,
-                        resource_type="raw",
-                        folder="PDFs",
-                        use_filename=True,
-                        unique_filename=True,
-                        chunk_size=6000000
-                    )
-                    file_url = result["secure_url"]
-                    public_id = result["public_id"] 
-                else:
-                    # 🔹 SMALL FILE
-                    result = cloudinary.uploader.upload(
-                        file,
-                        resource_type="raw",
-                        folder="PDFs",
-                        use_filename=True,
-                        unique_filename=True,
-                    )
-                    file_url = result["secure_url"]
-                    public_id = result["public_id"] 
-                
-
-            # ✅ OTHER FILES
+    if request.user.is_authenticated:
+        if request.method == 'GET':
+            if request.user.is_superuser:
+                base_template = "adminpanel/admin_base.html"
             else:
-                file_type = "other"
-                if file.size > MAX_SIMPLE_UPLOAD:
-                    # 🔥 LARGE FILE
-                    result = cloudinary.uploader.upload_large(
-                        file,
-                        resource_type="raw",
-                        folder="documents",
-                        use_filename=True,
-                        unique_filename=True,
-                        chunk_size=6000000
-                    )
-                    file_url = result["secure_url"]
-                    public_id = result["public_id"] 
-                else:
-                    # 🔹 SMALL FILE
-                    result = cloudinary.uploader.upload(
-                        file,
-                        resource_type="raw",
-                        folder="documents",
-                        use_filename=True,
-                        unique_filename=True,
-                    )
-                    file_url = result["secure_url"]
-                    public_id = result["public_id"] 
-                
+                base_template = "storageapp/base.html"
 
-            CloudFile.objects.create(
-                user=request.user,
-                file_name=file.name,
-                file_size=file.size,
-                file_type=file_type,
-                uploaded_file=uploaded_file,
-                file_url=file_url,
-                public_id=public_id,
+            # 👇 IMPORTANT PART
+            last_uploads = (
+                CloudFile.objects
+                .filter(user=request.user, is_deleted=False)
+                .order_by("-uploaded_at")[:10]
             )
 
-        return JsonResponse({"success": True})
+            return render(
+                request,
+                "storageapp/upload.html",
+                {"last_uploads": last_uploads,
+                "base_template": base_template},
+            )
+            
+        if request.method == 'POST':
+            files = request.FILES.getlist('file')
+
+            if not files:
+                return render(request, "storageapp/upload.html", {
+                    "error": "Please select a file",
+                    "base_template": base_template
+                })
+        
+            
+            for file in files:
+            
+                mime_type, _ = mimetypes.guess_type(file.name)
+
+                uploaded_file = None
+                file_url = None
+                public_id = None
+
+                if mime_type and mime_type.startswith("image"):
+                    file_type = "image"
+                    if file.size > MAX_SIMPLE_UPLOAD:
+                        # 🔥 LARGE FILE
+                        result = cloudinary.uploader.upload_large(
+                            file,
+                            resource_type="raw",
+                            folder="images",
+                            use_filename=True,
+                            unique_filename=True,
+                            chunk_size=6000000
+                        )
+                        file_url = result["secure_url"]
+                        public_id = result["public_id"] 
+                    else:
+                        # 🔹 SMALL FILE
+                        result = cloudinary.uploader.upload(
+                            file,
+                            resource_type="raw",
+                            folder="images",
+                            use_filename=True,
+                            unique_filename=True,
+                        )
+                        file_url = result["secure_url"]
+                        public_id = result["public_id"] 
+
+                # ✅ VIDEO
+                elif mime_type and mime_type.startswith("video"):
+                    file_type = "video"
+                    if file.size > MAX_SIMPLE_UPLOAD:
+                        # 🔥 LARGE FILE
+                        result = cloudinary.uploader.upload_large(
+                            file,
+                            resource_type="raw",
+                            folder="videos",
+                            use_filename=True,
+                            unique_filename=True,
+                            chunk_size=6000000
+                        )
+                        file_url = result["secure_url"]
+                        public_id = result["public_id"] 
+                    else:
+                        # 🔹 SMALL FILE
+                        result = cloudinary.uploader.upload(
+                            file,
+                            resource_type="raw",
+                            folder="videos",
+                            use_filename=True,
+                            unique_filename=True,
+                        )
+                        file_url = result["secure_url"]
+                        public_id = result["public_id"] 
+                    
+
+                # ✅ PDF
+                elif mime_type == "application/pdf":
+                    file_type = "document"
+                    if file.size > MAX_SIMPLE_UPLOAD:
+                        # 🔥 LARGE FILE
+                        result = cloudinary.uploader.upload_large(
+                            file,
+                            resource_type="raw",
+                            folder="PDFs",
+                            use_filename=True,
+                            unique_filename=True,
+                            chunk_size=6000000
+                        )
+                        file_url = result["secure_url"]
+                        public_id = result["public_id"] 
+                    else:
+                        # 🔹 SMALL FILE
+                        result = cloudinary.uploader.upload(
+                            file,
+                            resource_type="raw",
+                            folder="PDFs",
+                            use_filename=True,
+                            unique_filename=True,
+                        )
+                        file_url = result["secure_url"]
+                        public_id = result["public_id"] 
+                    
+
+                # ✅ OTHER FILES
+                else:
+                    file_type = "other"
+                    if file.size > MAX_SIMPLE_UPLOAD:
+                        # 🔥 LARGE FILE
+                        result = cloudinary.uploader.upload_large(
+                            file,
+                            resource_type="raw",
+                            folder="documents",
+                            use_filename=True,
+                            unique_filename=True,
+                            chunk_size=6000000
+                        )
+                        file_url = result["secure_url"]
+                        public_id = result["public_id"] 
+                    else:
+                        # 🔹 SMALL FILE
+                        result = cloudinary.uploader.upload(
+                            file,
+                            resource_type="raw",
+                            folder="documents",
+                            use_filename=True,
+                            unique_filename=True,
+                        )
+                        file_url = result["secure_url"]
+                        public_id = result["public_id"] 
+                    
+
+                CloudFile.objects.create(
+                    user=request.user,
+                    file_name=file.name,
+                    file_size=file.size,
+                    file_type=file_type,
+                    uploaded_file=uploaded_file,
+                    file_url=file_url,
+                    public_id=public_id,
+                )
+
+            return JsonResponse({"success": True})
+        
+    else: 
+        next_url = reverse('storageapp:upload_page')
+        request.session['next_url'] = next_url
+        return redirect('accounts:signin_page')
     
 
 
 
-@login_required
+
 def shared_files(request):
-    if request.user.is_superuser:
-        base_template = "adminpanel/admin_base.html"
-    else:
-        base_template = "storageapp/base.html"
-    shared_with_me = SharedFile.objects.filter(
-        shared_with=request.user,
-        file__is_deleted=False
-    ).select_related("file", "owner")
+    if request.user.is_authenticated:
+        if request.user.is_superuser:
+            base_template = "adminpanel/admin_base.html"
+        else:
+            base_template = "storageapp/base.html"
 
-    shared_by_me = SharedFile.objects.filter(
-        owner=request.user,
-        file__is_deleted=False
-    ).select_related("file", "shared_with")
+        shared_with_me = SharedFile.objects.filter(
+            shared_with=request.user,
+            file__is_deleted=False
+        ).select_related("file", "owner")
 
-    return render(request, "storageapp/shared.html", {
-        "shared_with_me": shared_with_me,
-        "shared_by_me": shared_by_me,
-        "base_template": base_template,
-    })
+        shared_by_me = SharedFile.objects.filter(
+            owner=request.user,
+            file__is_deleted=False
+        ).select_related("file", "shared_with")
+
+        return render(request, "storageapp/shared.html", {
+            "shared_with_me": shared_with_me,
+            "shared_by_me": shared_by_me,
+            "base_template": base_template,
+        })
+    else: 
+        next_url = reverse('storageapp:shared_files')
+        request.session['next_url'] = next_url
+        return redirect('accounts:signin_page')
 
 
 @require_POST
@@ -425,78 +443,89 @@ def share_file_api(request, file_id):
     )
 
     return JsonResponse({"success": True})
+    
 
 
 
-@login_required
+
 def myfiles(request):
-    if request.user.is_superuser:
-        base_template = "adminpanel/admin_base.html"
-    else:
-        base_template = "storageapp/base.html"
-    q = request.GET.get("q", "").strip()
-    file_type = request.GET.get("type")
+    if request.user.is_authenticated:
+        if request.user.is_superuser:
+            base_template = "adminpanel/admin_base.html"
+        else:
+            base_template = "storageapp/base.html"
+        q = request.GET.get("q", "").strip()
+        file_type = request.GET.get("type")
 
-    files = CloudFile.objects.filter(
-        user=request.user,
-        is_deleted=False
-    )
-
-    # 🔹 Filter by category
-    if file_type:
-        files = files.filter(file_type=file_type)
-
-    # 🔹 Search inside selected category
-    if q:
-        files = files.filter(file_name__icontains=q)
-
-    files = files.order_by("-uploaded_at")
-
-    return render(
-        request,
-        "storageapp/myfiles.html",
-        {
-            "files": files,
-            "active_type": file_type,
-            "base_template": base_template,
-        }
-    )
-
-
-
-@login_required
-def trash(request):
-    if request.user.is_superuser:
-        base_template = "adminpanel/admin_base.html"
-    else:
-        base_template = "storageapp/base.html"
-
-    query = request.GET.get("q", "")
-
-    files = CloudFile.objects.filter(
-        user=request.user,
-        is_deleted=True
-    )
-
-    if query:
-        files = files.filter(
-            Q(file_name__icontains=query) |
-            Q(file_type__icontains=query)
+        files = CloudFile.objects.filter(
+            user=request.user,
+            is_deleted=False
         )
 
-    total_size = sum(f.file_size for f in files)
-    expiring_soon = sum(
-        1 for f in files if f.days_left() is not None and f.days_left() <= 7
-    )
+        # 🔹 Filter by category
+        if file_type:
+            files = files.filter(file_type=file_type)
 
-    return render(request, "storageapp/trash.html", {
-        "files": files,
-        "total_files": files.count(),
-        "total_size": total_size,
-        "expiring_soon": expiring_soon,
-        "query": query,
-        "base_template": base_template,
-    })
+        # 🔹 Search inside selected category
+        if q:
+            files = files.filter(file_name__icontains=q)
+
+        files = files.order_by("-uploaded_at")
+
+        return render(
+            request,
+            "storageapp/myfiles.html",
+            {
+                "files": files,
+                "active_type": file_type,
+                "base_template": base_template,
+            }
+        )
+    else: 
+        next_url = reverse('storageapp:myfiles')
+        request.session['next_url'] = next_url
+        return redirect('accounts:signin_page')
+
+
+
+
+def trash(request):
+    if request.user.is_authenticated:
+        if request.user.is_superuser:
+            base_template = "adminpanel/admin_base.html"
+        else:
+            base_template = "storageapp/base.html"
+
+        query = request.GET.get("q", "")
+
+        files = CloudFile.objects.filter(
+            user=request.user,
+            is_deleted=True
+        )
+
+        if query:
+            files = files.filter(
+                Q(file_name__icontains=query) |
+                Q(file_type__icontains=query)
+            )
+
+        total_size = sum(f.file_size for f in files)
+        expiring_soon = sum(
+            1 for f in files if f.days_left() is not None and f.days_left() <= 7
+        )
+
+        return render(request, "storageapp/trash.html", {
+            "files": files,
+            "total_files": files.count(),
+            "total_size": total_size,
+            "expiring_soon": expiring_soon,
+            "query": query,
+            "base_template": base_template,
+        })
+    else: 
+        next_url = reverse('storageapp:trash')
+        request.session['next_url'] = next_url
+        return redirect('accounts:signin_page')
 
 
 
@@ -514,40 +543,45 @@ def trash_stats(user):
 
 
 
-@login_required
+
 def settings_page(request):
 
-    user = request.user
+    if request.user.is_authenticated:
 
-    if request.user.is_superuser:
-        base_template = "adminpanel/admin_base.html"
-    else:
-        base_template = "storageapp/base.html"
+        user = request.user
 
-    if request.method == "POST":
+        if request.user.is_superuser:
+            base_template = "adminpanel/admin_base.html"
+        else:
+            base_template = "storageapp/base.html"
 
-        # ✅ REMOVE PHOTO
-        if "remove_photo" in request.POST:
-            if user.profile_picture:
-                user.profile_picture.delete(save=False)
-                user.profile_picture = None
-                user.save()
+        if request.method == "POST":
+
+            # ✅ REMOVE PHOTO
+            if "remove_photo" in request.POST:
+                if user.profile_picture:
+                    user.profile_picture.delete(save=False)
+                    user.profile_picture = None
+                    user.save()
+                return redirect("storageapp:settings_page")
+
+            # ✅ UPDATE PROFILE
+            if request.FILES.get("profile_picture"):
+                user.profile_picture = request.FILES["profile_picture"]
+
+            user.first_name = request.POST.get("first_name", "")
+            user.last_name = request.POST.get("last_name", "")
+            user.email = request.POST.get("email", "")
+            user.phone = request.POST.get("phone", "")
+            user.save()
+
             return redirect("storageapp:settings_page")
 
-        # ✅ UPDATE PROFILE
-        if request.FILES.get("profile_picture"):
-            user.profile_picture = request.FILES["profile_picture"]
-
-        user.first_name = request.POST.get("first_name", "")
-        user.last_name = request.POST.get("last_name", "")
-        user.email = request.POST.get("email", "")
-        user.phone = request.POST.get("phone", "")
-        user.save()
-
-        return redirect("storageapp:settings_page")
-
-    return render(request, "storageapp/settings.html",{"base_template": base_template})
-    
+        return render(request, "storageapp/settings.html",{"base_template": base_template})
+    else: 
+        next_url = reverse('storageapp:settings_page')
+        request.session['next_url'] = next_url
+        return redirect('accounts:signin_page')
 
 
 
@@ -623,9 +657,6 @@ def download_file(request, file_id):
 
 
 
-
-
-
 @require_POST
 @login_required
 def remove_shared_file(request, shared_id):
@@ -635,22 +666,35 @@ def remove_shared_file(request, shared_id):
     )
 
     # 🔐 Security check
-    if request.user != shared.owner and request.user != shared.shared_with:
+    if request.user == shared.shared_with:
+        # ✅ ONLY remove share entry
+        shared.delete()
+        return JsonResponse({"success": True})
+    else:
         return JsonResponse({"success": False, "error": "Not allowed"})
 
-    # ✅ ONLY remove share entry
-    shared.delete()
+    
 
-    return JsonResponse({"success": True})
-
+    
 
 
+@require_POST
+@login_required
+def remove_shared_own_file(request, shared_id):
+    shared = get_object_or_404(
+        SharedFile,
+        id=shared_id
+    )
 
+    # 🔐 Security check
+    if request.user == shared.owner:
+        # ✅ ONLY remove share entry
+        shared.delete()
+        return JsonResponse({"success": True})
+    else:
+        return JsonResponse({"success": False, "error": "Not allowed"})
 
-
-
-
-
+    
 
 
 
@@ -670,11 +714,13 @@ def restore_file(request, file_id):
     })
 
 
+
 @login_required
 def restore_all(request):
     CloudFile.objects.filter(user=request.user, is_deleted=True)\
         .update(is_deleted=False, deleted_at=None)
     return JsonResponse({"success": True})
+
 
 
 @login_required
@@ -712,23 +758,3 @@ def empty_trash(request):
 
     files.delete()
     return JsonResponse({"success": True})
-
-
-
-
-
-@login_required
-def myfiles_search(request):
-    q = request.GET.get("q", "").strip()
-
-    files = CloudFile.objects.filter(
-        user=request.user,
-        is_deleted=False,
-        file_name__icontains=q
-    ) if q else CloudFile.objects.none()
-
-    return render(
-        request,
-        "storageapp/partials/myfiles_list.html",
-        {"files": files}
-    )

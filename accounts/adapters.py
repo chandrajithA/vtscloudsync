@@ -45,7 +45,6 @@ class MySocialAccountAdapter(DefaultSocialAccountAdapter):
                 first_name=name,
                 is_active=True,
             )
-            user.set_unusable_password()
             user.save()
 
             try:
