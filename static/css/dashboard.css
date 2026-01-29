@@ -324,3 +324,8 @@
     font-size: 12px;
     font-weight: 500;
 }
+
+.empty{
+    margin-top: 15px;
+    color: var(--grey);
+}

@@ -116,3 +116,12 @@
 .upload-btn input {
     display: none;
 }
+
+.save-btn:disabled {
+    background-color: #9ca3af;   /* grey */
+    cursor: not-allowed;
+    opacity: 0.7;
+    margin-bottom: 20px;
+}
+
+

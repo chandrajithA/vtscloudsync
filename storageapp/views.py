@@ -19,6 +19,11 @@ from django.db.models.functions import TruncDate
 from datetime import date
 from django.urls import reverse
 from django.template.defaultfilters import filesizeformat
+import json
+from django.contrib import messages
+from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth.hashers import check_password
+from django.contrib import messages
 
 
 
@@ -270,8 +275,6 @@ def upload_page(request):
             uploaded_files = []
             rejected_files = []
 
-            
-        
             
             for file in files:
 
@@ -532,6 +535,7 @@ def upload_page(request):
     
 
 @require_POST
+@login_required
 def upload_cancelled(request):
     file_name = request.POST.get("file_name")
     file_size = request.POST.get("file_size")
@@ -732,7 +736,37 @@ def settings_page(request):
 
         if request.method == "POST":
 
-            # ✅ REMOVE PHOTO
+        # ==========================
+        # 🔐 PASSWORD FORM (FIRST!)
+        # ==========================
+            if "password_form" in request.POST:
+                new_password = request.POST.get("new_password")
+                confirm_password = request.POST.get("confirm_password")
+                current_password = request.POST.get("current_password")
+
+                if new_password != confirm_password:
+                    messages.error(request, "Passwords do not match.")
+                    return redirect("storageapp:settings_page")
+
+                if user.has_usable_password():
+                    if not current_password:
+                        messages.error(request, "Current password is required.")
+                        return redirect("storageapp:settings_page")
+
+                    if not check_password(current_password, user.password):
+                        messages.error(request, "Current password is incorrect.")
+                        return redirect("storageapp:settings_page")
+
+                user.set_password(new_password)
+                user.save()
+                update_session_auth_hash(request, user)
+
+                messages.success(request, "Password updated successfully.")
+                return redirect("storageapp:settings_page")
+
+            # ==========================
+            # 🖼 REMOVE PHOTO
+            # ==========================
             if "remove_photo" in request.POST:
                 if user.profile_picture:
                     user.profile_picture.delete(save=False)
@@ -740,23 +774,54 @@ def settings_page(request):
                     user.save()
                 return redirect("storageapp:settings_page")
 
-            # ✅ UPDATE PROFILE
+            # ==========================
+            # 👤 PROFILE UPDATE ONLY
+            # ==========================
             if request.FILES.get("profile_picture"):
                 user.profile_picture = request.FILES["profile_picture"]
 
-            user.first_name = request.POST.get("first_name", "")
-            user.last_name = request.POST.get("last_name", "")
-            user.email = request.POST.get("email", "")
-            user.phone = request.POST.get("phone", "")
-            user.save()
+            user.first_name = request.POST.get("first_name", user.first_name)
+            user.last_name = request.POST.get("last_name", user.last_name)
+            user.email = request.POST.get("email", user.email)
+            user.phone = request.POST.get("phone", user.phone)
 
+            user.save()
+            messages.success(request, "Profile updated successfully.")
             return redirect("storageapp:settings_page")
 
-        return render(request, "storageapp/settings.html",{"base_template": base_template})
+        return render(
+            request,
+            "storageapp/settings.html",
+            {"base_template": base_template},
+        )
     else: 
         next_url = reverse('storageapp:settings_page')
         request.session['next_url'] = next_url
         return redirect('accounts:signin_page')
+    
+
+@login_required
+def check_username(request):
+    username = request.GET.get("username", "").strip()
+    exists = User.objects.filter(username=username).exclude(id=request.user.id).exists()
+    return JsonResponse({"available": not exists})
+
+
+@login_required
+@require_POST
+def update_username(request):
+    data = json.loads(request.body)
+    username = data.get("username", "").strip()
+
+    if not username:
+        return JsonResponse({"success": False, "message": "Username required"})
+
+    if User.objects.filter(username=username).exclude(id=request.user.id).exists():
+        return JsonResponse({"success": False, "message": "Username already taken"})
+
+    request.user.username = username
+    request.user.save()
+    return JsonResponse({"success": True, "message": "Username updated successfully"})
 
 
 
@@ -879,6 +944,32 @@ def restore_file(request, file_id):
         CloudFile, id=file_id, user=request.user, is_deleted=True
     )
 
+    used = (
+        CloudFile.objects
+        .filter(user=request.user, is_deleted=False)
+        .aggregate(total=Sum("file_size"))["total"] or 0
+    )
+
+    sub = UserSubscription.objects.select_related("plan").filter(user=request.user).first()
+    limit = sub.plan.storage_limit if sub and sub.plan else 0
+
+    remaining_space = limit - used
+
+    
+
+    if remaining_space <= 0:
+        return JsonResponse(
+            {"error": "Storage almost full. Upgrade your plan."},
+            status=403
+        )
+    
+    if file.file_size > remaining_space:
+        return JsonResponse(
+            {"error": "Storage almost full. Upgrade your plan."},
+            status=403
+        )
+
+
     file.is_deleted = False
     file.deleted_at = None
     file.save()
@@ -892,9 +983,54 @@ def restore_file(request, file_id):
 
 @login_required
 def restore_all(request):
-    CloudFile.objects.filter(user=request.user, is_deleted=True)\
-        .update(is_deleted=False, deleted_at=None)
-    return JsonResponse({"success": True})
+    user = request.user
+
+    # 1️⃣ Currently used storage
+    used = (
+        CloudFile.objects
+        .filter(user=user, is_deleted=False)
+        .aggregate(total=Sum("file_size"))["total"] or 0
+    )
+
+    # 2️⃣ Total size of deleted files
+    deleted_total = (
+        CloudFile.objects
+        .filter(user=user, is_deleted=True)
+        .aggregate(total=Sum("file_size"))["total"] or 0
+    )
+
+    # 3️⃣ Get storage limit
+    sub = UserSubscription.objects.select_related("plan").filter(user=user).first()
+    limit = sub.plan.storage_limit if sub and sub.plan else 0
+
+    remaining_space = limit - used
+
+    if remaining_space <= 0:
+        return JsonResponse(
+            {"error": "Storage almost full. Upgrade your plan."},
+            status=403
+        )
+
+    # 4️⃣ Check if restore fits
+    if deleted_total > remaining_space:
+        return JsonResponse(
+            {
+                "error": "Not enough storage to restore all files. Restore files individually or upgrade your plan."
+            },
+            status=403
+        )
+
+    # 5️⃣ Restore all
+    CloudFile.objects.filter(user=user, is_deleted=True).update(
+        is_deleted=False,
+        deleted_at=None
+    )
+
+    return JsonResponse({
+        "success": True,
+        "message": "All files restored successfully",
+        "stats": trash_stats(user)
+    })
 
 
 
@@ -932,4 +1068,7 @@ def empty_trash(request):
         )
 
     files.delete()
-    return JsonResponse({"success": True})
+    return JsonResponse({
+        "success": True,
+        "message": "Trash emptied successfully"
+    })

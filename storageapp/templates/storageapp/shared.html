@@ -159,7 +159,7 @@
         {% endfor %}
 
         {% if not shared_with_me and not shared_by_me %}
-        <p class="empty">
+        <p id="emptyResults" class="empty">
             No files found
         </p>
         {% endif %}
@@ -306,7 +306,6 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
-        noResults.style.display = visible === 0 ? "block" : "none";
     }
 
     cards.forEach(card => {
@@ -365,8 +364,14 @@ document.addEventListener("DOMContentLoaded", function () {
         // ✅ Show / hide "No files found"
         if (query && visibleCount === 0) {
             noResults.style.display = "block";
+            if(document.getElementById("emptyResults")){
+                document.getElementById("emptyResults").style.display="none";
+            }
         } else {
             noResults.style.display = "none";
+            if(document.getElementById("emptyResults")){
+                document.getElementById("emptyResults").style.display="block";
+            }
         }
     });
 });

@@ -161,6 +161,9 @@ def signup_page(request):
         if not userid.strip():
             messages.error(request, "User ID cannot be empty or spaces only.")
             valid = False
+        elif not re.fullmatch(r'[A-Za-z0-9]+', userid):
+            messages.error(request, "User ID can only contain letters and numbers (no spaces).")
+            valid = False
         elif len(userid) > 16 :
             messages.error(request, "User ID should contain less than 16 letters.")
             valid = False

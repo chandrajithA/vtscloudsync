@@ -75,3 +75,39 @@ a{
      font-size:16px;
      margin-bottom: 10px;
 }
+
+
+.messages {
+    margin: 15px 0;
+}
+
+.alert {
+    padding: 12px 14px;
+    border-radius: 6px;
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+
+.alert-success {
+    background: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #10b981;
+}
+
+.alert-error {
+    background: #fef2f2;
+    color: #7f1d1d;
+    border: 1px solid #ef4444;
+}
+
+.alert-warning {
+    background: #fffbeb;
+    color: #78350f;
+    border: 1px solid #f59e0b;
+}
+
+.alert-info {
+    background: #eff6ff;
+    color: #1e3a8a;
+    border: 1px solid #3b82f6;
+}

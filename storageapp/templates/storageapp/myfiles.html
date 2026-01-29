@@ -104,7 +104,7 @@
     {% endfor %}
 
     {% if not files %}
-    <p class="empty">
+    <p id="emptyResults" class="empty">
         No files found
     </p>
     {% endif %}
@@ -277,8 +277,14 @@ document.addEventListener("DOMContentLoaded", function () {
         // ✅ Show "No files" ONLY when search has text and no match
         if (query && visibleCount === 0) {
             emptyMsg.style.display = "block";
+            if(document.getElementById("emptyResults")){
+                document.getElementById("emptyResults").style.display="none";
+            }
         } else {
             emptyMsg.style.display = "none";
+            if(document.getElementById("emptyResults")){
+                document.getElementById("emptyResults").style.display="block";
+            }
         }
     });
 });

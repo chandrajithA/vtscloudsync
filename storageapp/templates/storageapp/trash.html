@@ -13,6 +13,13 @@
     <span>⚠ Items in trash will be permanently deleted after 30 days</span>
 </div>
 
+
+
+<div id="pageLoader" class="page-loader" style="display:none;">
+    <div class="spinner"></div>
+    <p>Processing...</p>
+</div>
+
 <div class="trash-stats">
     <div class="stat-box">
         <p>Items in Trash</p>
@@ -28,8 +35,9 @@
     </div>
 </div>
 
+<div id="toastContainer"></div>
+
 <div class="trash-actions">
-    <input type="text" id="trashSearch" placeholder="Search deleted files..." value="{{ query }}">
     <button class="btn-primary" onclick="restoreAll()">Restore All</button>
     <button class="btn-danger" onclick="emptyTrash()">Empty Trash</button>
 </div>
@@ -58,34 +66,92 @@
 
 </div>
 {% endfor %}
+
 {% if not files %}
-<p class="empty">
+<p id="emptyResults" class="empty">
     No files found
 </p>
 {% endif %}
 
+<p id="noTrashResults" class="empty" style="display:none;">
+    No files found
+</p>
+
 </div>
+
+
 
 {% endblock %}
 
 {% block script %}
 <script>
 
-const searchInput = document.getElementById("trashSearch");
-searchInput.addEventListener("keydown", function (event) {
-    if (event.key === "Enter") {
-        event.preventDefault(); // prevent form submit if inside a form
+document.addEventListener("DOMContentLoaded", () => {
+    const searchInput = document.getElementById("globalSearchInput");
+    const trashItems = document.querySelectorAll(".trash-item");
+    const noResults = document.getElementById("noTrashResults");
 
-        const query = searchInput.value.trim();
-        window.location.href = `?q=${encodeURIComponent(query)}`;
-    }
+    if (!searchInput) return;
+
+    searchInput.addEventListener("input", () => {
+        const query = searchInput.value.toLowerCase().trim();
+        let visibleCount = 0;
+
+        trashItems.forEach(item => {
+            const name = item
+                .querySelector(".trash-left strong")
+                .innerText
+                .toLowerCase();
+
+            if (!query || name.includes(query)) {
+                item.style.display = "flex";
+                visibleCount++;
+            } else {
+                item.style.display = "none";
+            }
+        });
+
+        // ✅ Show empty text ONLY when searching and nothing matches
+        if (query && visibleCount === 0) {
+            noResults.style.display = "block";
+            if(document.getElementById("emptyResults")){
+                document.getElementById("emptyResults").style.display="none";
+            }
+        } else {
+            noResults.style.display = "none";
+            if(document.getElementById("emptyResults")){
+                document.getElementById("emptyResults").style.display="block";
+            }
+        }
+    });
 });
 
 
 function restoreFile(id) {
+    const row = document.getElementById(`file-${id}`);
+    if (!row) return;
+
+    // 🔄 Show loading state
+    row.classList.add("loading");
+
     fetch(`/user/trash/restore/${id}/`)
-    .then(r => r.json())
-    .then(() => document.getElementById(`file-${id}`).remove());
+        .then(res => {
+            if (!res.ok) {
+                return res.json().then(err => Promise.reject(err));
+            }
+            return res.json();
+        })
+        .then(data => {
+            if (data.success) {
+                row.remove();
+                showMessage("File restored successfully", "success");
+                updateStats(data.stats);
+            }
+        })
+        .catch(err => {
+            showMessage(err.error || "Restore failed", "error");
+            row.classList.remove("loading"); // ❌ do NOT remove row
+        });
 }
 
 function deleteFile(id) {
@@ -96,14 +162,53 @@ function deleteFile(id) {
 }
 
 function restoreAll() {
+    showLoader(true);
+
     fetch(`/user/trash/restore-all/`)
-    .then(() => location.reload());
+        .then(res => {
+            if (!res.ok) {
+                return res.json().then(err => Promise.reject(err));
+            }
+            return res.json();
+        })
+        .then(data => {
+            showMessage(data.message, "success");
+
+            // 🔄 Delay reload so message is visible
+            setTimeout(() => {
+                location.reload();
+            }, 1200);
+        })
+        .catch(err => {
+            showLoader(false);
+            showMessage(err.error || "Restore failed", "error");
+        });
 }
 
 function emptyTrash() {
     if (!confirm("Empty trash permanently?")) return;
+
+    showLoader(true);
+
     fetch(`/user/trash/empty/`)
-    .then(() => location.reload());
+        .then(res => {
+            if (!res.ok) {
+                return res.json().then(err => Promise.reject(err));
+            }
+            return res.json();
+        })
+        .then(data => {
+            showMessage(data.message, "success");
+
+            // ⏳ let user see message
+            setTimeout(() => {
+                location.reload();
+            }, 1200);
+        })
+        .catch(err => {
+            showLoader(false);
+            showMessage(err.error || "Failed to empty trash", "error");
+        });
 }
 
 function updateStats(stats) {
@@ -117,6 +222,21 @@ function formatBytes(bytes) {
     const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(1024));
     return (bytes / Math.pow(1024, i)).toFixed(1) + " " + sizes[i];
+}
+
+function showMessage(text, type="success") {
+    const container = document.getElementById("toastContainer");
+    const div = document.createElement("div");
+    div.className = `toast ${type}`;
+    div.innerText = text;
+
+    container.appendChild(div);
+
+    setTimeout(() => div.remove(), 3500);
+}
+
+function showLoader(show) {
+    document.getElementById("pageLoader").style.display = show ? "flex" : "none";
 }
 
 </script>

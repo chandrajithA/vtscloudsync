@@ -26,7 +26,7 @@
     </div>
 
     
-    {% if request.resolver_match.url_name == 'dashboard' or request.resolver_match.url_name == 'shared_files' or request.resolver_match.url_name == 'myfiles' %}
+    {% if request.resolver_match.url_name == 'dashboard' or request.resolver_match.url_name == 'shared_files' or request.resolver_match.url_name == 'myfiles' or request.resolver_match.url_name == 'trash' %}
     <form onsubmit="return false;" class="global-search">
         <div class="search-box">
         <input

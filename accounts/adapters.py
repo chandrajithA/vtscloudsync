@@ -4,6 +4,7 @@ from .models import User
 import re
 from subscriptions.models import UserSubscription, Plan
 from django.shortcuts import redirect
+from allauth.exceptions import ImmediateHttpResponse
 
 def generate_unique_username_from_email(email):
     base = email.split('@')[0].lower()
@@ -34,17 +35,39 @@ class MySocialAccountAdapter(DefaultSocialAccountAdapter):
 
         # If already linked → do nothing
         if sociallogin.is_existing:
+            user = sociallogin.user
+
+            # 🔒 BLOCK inactive users
+            if not user.is_active:
+                messages.error(
+                    request,
+                    "Your account is disabled. Please contact support."
+                )
+                raise ImmediateHttpResponse(
+                    redirect("accounts:signin_page")
+                )
             return
 
         try:
             user = User.objects.get(email=email)
+            # 🔒 BLOCK inactive users
+            if not user.is_active:
+                messages.error(
+                    request,
+                    "Your account is disabled. Please contact support."
+                )
+                raise ImmediateHttpResponse(
+                    redirect("accounts:signin_page")
+                )
         except User.DoesNotExist:
             user = User.objects.create(
                 username=generate_unique_username_from_email(email),
                 email=email,
                 first_name=name,
                 is_active=True,
+                
             )
+            user.set_unusable_password()
             user.save()
 
             try:

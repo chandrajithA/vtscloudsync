@@ -13,7 +13,37 @@
     <h2 class="settings-title">Settings</h2>
     <p class="settings-subtitle">Manage your account and preferences</p>
 
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
     <div class="settings-card">
+
+        
+
+        <h3>Change Username</h3>
+
+        <div class="form-grid">
+            <div>
+                <label>Username</label>
+                <input type="text" id="usernameInput" value="{{ request.user.username }}">
+                <small id="usernameStatus"></small>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="button" class="save-btn" id="changeUsernameBtn" disabled onclick="updateUsername()">
+                Update Username
+            </button>
+        </div>
+
+
         <h3>Profile Information</h3>
 
         <form method="POST" enctype="multipart/form-data">
@@ -64,7 +94,7 @@
 
                 <div>
                     <label>Phone number</label>
-                    <input type="text" name="phone" value="{{ request.user.phone }}">
+                    <input type="text" name="phone" value="{{ request.user.phone|default:"" }}">
                 </div>
             </div>
 
@@ -74,6 +104,47 @@
                 <a href="{% url 'storageapp:dashboard' %}" class="cancel-btn">Cancel</a>
             </div>
 
+        </form>
+
+        
+
+        
+
+        <h3 style="margin-top:20px;">Password</h3>
+
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="password_form" value="1">
+
+            <div class="form-grid">
+
+                {% if request.user.has_usable_password %}
+                <div>
+                    <label>Current password</label>
+                    <input type="password" name="current_password" required>
+                </div>
+                {% endif %}
+
+                <div>
+                    <label>New password</label>
+                    <input type="password" name="new_password" required>
+                </div>
+
+                <div>
+                    <label>Confirm password</label>
+                    <input type="password" name="confirm_password" required>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="save-btn">
+                    {% if request.user.has_usable_password %}
+                        Change Password
+                    {% else %}
+                        Set Password
+                    {% endif %}
+                </button>
+            </div>
         </form>
         
     </div>
@@ -85,6 +156,7 @@
 <script>
 const input = document.getElementById("profileInput");
 const avatar = document.getElementById("avatarPreview");
+
 
 input?.addEventListener("change", function () {
     const file = this.files[0];
@@ -102,6 +174,103 @@ input?.addEventListener("change", function () {
     };
     reader.readAsDataURL(file);
 });
+
+const usernameInput = document.getElementById("usernameInput");
+const statusText = document.getElementById("usernameStatus");
+const changeBtn = document.getElementById("changeUsernameBtn");
+const originalUsername = "{{ request.user.username }}";
+
+if (usernameInput || statusText || changeBtn){  
+
+    let usernameTimer = null;
+
+    changeBtn.disabled = true; 
+
+    usernameInput?.addEventListener("input", () => {
+        clearTimeout(usernameTimer);
+        
+
+        const username = usernameInput.value.trim();
+        const regex = /^[A-Za-z0-9]+$/;
+
+        changeBtn.disabled = true;
+
+        if (!username) {
+            statusText.innerText = "User ID cannot be empty";
+            statusText.style.color = "red";
+            return;
+        }
+
+        if (username === originalUsername) {
+            statusText.innerText = "No change in username";
+            statusText.style.color = "#6b7280";
+            return;
+        }
+
+        if (!regex.test(username)) {
+            statusText.innerText = "Only letters and numbers allowed (no spaces)";
+            statusText.style.color = "red";
+            return;
+        }
+        
+
+        if (username.length < 8) {
+            statusText.innerText = "User ID must be at least 8 characters";
+            statusText.style.color = "red";
+            return;
+        }
+
+        if (username.length > 16) {
+            statusText.innerText = "User ID must be less than 16 characters";
+            statusText.style.color = "red";
+            return;
+        }
+
+        statusText.innerText = "Checking availability...";
+        statusText.style.color = "#6b7280";
+
+        usernameTimer = setTimeout(() => {
+            fetch(`/user/check-username/?username=${usernameInput.value}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.available) {
+                        statusText.innerText = "✓ Username available";
+                        statusText.style.color = "green";
+                        changeBtn.disabled = false;
+                    } else {
+                        statusText.innerText = "✗ Username already taken";
+                        statusText.style.color = "red";
+                        changeBtn.disabled = true;
+                    }
+                })
+                .catch(() => {
+                    statusText.innerText = "Error checking username";
+                    statusText.style.color = "red";
+                    changeBtn.disabled = true;
+                });
+                
+        }, 400);
+    });
+}
+
+function updateUsername() {
+    fetch("{% url 'storageapp:update_username' %}", {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": "{{ csrf_token }}",
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            username: usernameInput.value
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message);
+        if (data.success) location.reload();
+    });
+}
+
 </script>
 
 {% endblock %}

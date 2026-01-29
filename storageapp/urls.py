@@ -20,6 +20,9 @@ urlpatterns = [
     
     path("shared/<int:shared_id>/remove/", remove_shared_file, name="remove_shared_file"),
     path("shared/<int:shared_id>/remove_own/", remove_shared_own_file, name="remove_shared_own_file"),
+
+    path("check-username/", check_username, name="check_username"),
+    path("update-username/", update_username, name="update_username"),
     
     path("trash/restore/<int:file_id>/", restore_file, name="restore_file"),
     path("trash/delete/<int:file_id>/", delete_file, name="delete_file"),
