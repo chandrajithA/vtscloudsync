@@ -14,13 +14,27 @@
 <div class="upload-box" id="dropZone">
     <div class="upload-icon">☁️</div>
     <h3>Drag and drop files here</h3>
+    {% if not storage_near_limit %}
     <p>Or click the button below to browse the files</p>
+    {% endif %}
 
+    {% if storage_near_limit %}
+    <p style="color:#ef4444; margin-top:20px;">
+        🚫 Storage limit reached. Upgrade your plan to upload more files.
+    </p>
+    {% endif %}
+
+    {% if storage_near_limit %}
+    <button class="browse-btn disabled" disabled>
+        Storage Full
+    </button>
+    {% else %}
     <button class="browse-btn" onclick="document.getElementById('fileInput').click()">
         Browse Files
     </button>
+    {% endif %}
 
-    <input type="file" id="fileInput" name="file" multiple hidden>
+    <input type="file" id="fileInput" name="file" multiple hidden {% if storage_near_limit %}disabled{% endif %}>
 
 </div>
    
@@ -32,7 +46,7 @@
         <div class="upload-left">
             <div class="file-icon">
                 
-                    <img src="{% static 'images/checkmark.png' %}" alt="image">
+                    <img class="file-icon-img" src="{% static 'images/checkmark.png' %}" alt="image">
                 
             </div>
 
@@ -55,7 +69,7 @@
 
     </div>
 {% empty %}
-    <p style="color:#6b7280;">No recent uploads</p>
+    <p style="color:#6b7280;" id="no-upload-text">No recent uploads</p>
 {% endfor %}
 </div>
     <form id="uploadForm" method="POST" enctype="multipart/form-data">
@@ -82,6 +96,7 @@
 <script>
 const input = document.getElementById("fileInput");
 const uploadList = document.getElementById("uploadList");
+const noUploadText = document.getElementById("no-upload-text");
 const csrfToken = "{{ csrf_token }}";
 
 input.addEventListener("change", () => {
@@ -96,15 +111,20 @@ function uploadFile(file) {
 
     row.innerHTML = `
         <div class="upload-left">
-            <img class="file-icon" src="${iconUrl}" alt="file">
+            <div class="file-icon">
+                
+                    <img class="file-icon-img" class="file-icon" src="${iconUrl}" alt="file">
+            </div>
+            
             <div>
                 <div class="file-name">${file.name}</div>
-                <div class="file-size">${(file.size / 1024 / 1024).toFixed(3)} MB</div>
+                <div class="file-size">${formatFileSize(file.size)}</div>
             </div>
         </div>
 
         <div class="upload-right">
             <span class="status-text">Uploading…</span>
+            <span class="check hidden">✔</span>
             <img src="{% static 'images/close.png' %}" class="cancel-btn">
         </div>
 
@@ -115,6 +135,7 @@ function uploadFile(file) {
 
     uploadList.prepend(row);
 
+    noUploadText.style.display = "none";
     const bar = row.querySelector(".bar-fill");
     const status = row.querySelector(".status-text");
 
@@ -133,20 +154,58 @@ function uploadFile(file) {
     };
 
     xhr.onload = () => {
-        if (xhr.status === 200) {
-            row.classList.remove("uploading");
-            row.classList.add("completed");
-            bar.style.width = "100%";
-            status.innerHTML = "Completed";
-            cancelBtn.style.display = "none";
-            // show check mark
-            row.querySelector(".check").classList.remove("hidden");
+        const res = JSON.parse(xhr.responseText);
+        if (xhr.status === 200 && res.success) {
 
-            // change left icon to tick
-            row.querySelector(".file-icon").src = "{% static 'images/checkmark.png' %}";
-        } else {
+            const rejected = res.rejected_files?.find(
+                f => f.name === file.name
+            );
+
+            if (rejected) {
+                row.classList.add("error");
+                status.innerHTML = `
+                    <span class="error-text">
+                        ${rejected.reason}
+                    </span>
+                `;
+                bar.style.background = "#ef4444";
+                cancelBtn.style.display = "none";
+                row.querySelector(".file-icon-img").src = "{% static 'images/close.png' %}";
+                return;
+            }
+            
+                row.classList.remove("uploading");
+                row.classList.add("completed");
+
+                bar.style.width = "100%";
+                status.innerHTML = "Completed";
+
+                cancelBtn.style.display = "none";
+                // show check mark
+                const check = row.querySelector(".check");
+                check.classList.remove("hidden");
+
+                // change left icon to tick
+                row.querySelector(".file-icon-img").src = "{% static 'images/checkmark.png' %}";
+            
+        } 
+        else if (xhr.status === 403) {
+            row.classList.add("error");
+            status.innerText = `
+                        <span class="error-text">
+                            ${rejected.reason}
+                        </span>
+                    `;
+            bar.style.background = "#ef4444";
+            cancelBtn.style.display = "none";
+            row.querySelector(".file-icon-img").src = "{% static 'images/close.png' %}";
+        }
+        else {
             row.classList.add("error");
             status.innerHTML = "Failed";
+            bar.style.background = "#ef4444";
+            cancelBtn.style.display = "none";
+            row.querySelector(".file-icon-img").src = "{% static 'images/close.png' %}";
         }
     };
 
@@ -157,9 +216,34 @@ function uploadFile(file) {
         row.classList.add("cancelled");
         status.innerText = "Cancelled";
         bar.style.background = "#ef4444";
+        row.querySelector(".file-icon-img").src = "{% static 'images/close.png' %}";
+
+        // 🔥 Notify backend
+        const cancelData = new FormData();
+        cancelData.append("file_name", file.name);
+        cancelData.append("file_size", file.size);
+
+        fetch("{% url 'storageapp:upload_cancelled' %}", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": csrfToken
+            },
+            body: cancelData
+        });
     });
 
     xhr.send(formData);
+
+    function formatFileSize(bytes) {
+        if (!bytes || bytes === 0) return "0 Bytes";
+
+        const k = 1024;
+        const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+        const value = bytes / Math.pow(k, i);
+        return value.toFixed(value < 10 && i > 0 ? 2 : 1) + " " + sizes[i];
+    }
 }
 </script>
 

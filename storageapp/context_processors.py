@@ -14,17 +14,15 @@ def storage_info(request):
         .aggregate(total=Sum("file_size"))["total"] or 0
     )
 
-    limit = sub.plan.storage_limit
+    limit = sub.plan.storage_limit if sub and sub.plan else 0
 
-    storage_percent = min(
-        int((used / limit) * 100) if limit else 0,
-        100
-    )
+    storage_percent = int((used / limit) * 100) if limit else 0
+
 
     return {
         "storage_used": used,
         "storage_limit": limit,
-        "storage_percent": int((used / limit) * 100) if limit else 0,
         "current_plan": sub.plan,
         "storage_percent":storage_percent,
+        "storage_near_limit": storage_percent >= 99,
     }

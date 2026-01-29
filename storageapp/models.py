@@ -59,6 +59,59 @@ class SharedFile(models.Model):
 
     def __str__(self):
         return f"{self.file.file_name} → {self.shared_with}"
+    
+
+
+
+class UploadHistory(models.Model):
+    STATUS_CHOICES = (
+        ("success", "Success"),
+        ("failed", "Failed"),
+        ("cancelled", "Cancelled"),
+    )
+
+    FAILURE_REASON_CHOICES = (
+        ("STORAGE_FULL", "Storage full"),
+        ("FILE_TOO_LARGE", "File too large"),
+        ("CLOUDINARY_LIMIT", "Cloudinary limit"),
+        ("CANCELLED", "Cancelled"),
+        ("UNKNOWN", "Unknown error"),
+    )
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="upload_history"
+    )
+
+    # 🔹 File metadata (snapshot)
+    file_name = models.CharField(max_length=255)
+    file_size = models.BigIntegerField()
+    file_type = models.CharField(max_length=20)
+    mime_type = models.CharField(max_length=100, null=True, blank=True)
+
+    # 🔹 Result
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES)
+    failure_reason = models.CharField(
+        max_length=50,
+        choices=FAILURE_REASON_CHOICES,
+        null=True,
+        blank=True
+    )
+    failure_message = models.TextField(null=True, blank=True)
+
+    # 🔹 Cloudinary info (only if success)
+    file_url = models.URLField(null=True, blank=True)
+    public_id = models.CharField(max_length=255, null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.file_name} - {self.status}"
 
 
    

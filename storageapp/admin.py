@@ -86,3 +86,104 @@ class SharedFileAdmin(admin.ModelAdmin):
     )
 
     ordering = ("-shared_at",)
+
+
+
+from django.contrib import admin
+from .models import UploadHistory
+
+
+@admin.register(UploadHistory)
+class UploadHistoryAdmin(admin.ModelAdmin):
+    # 🔹 Columns shown in list view
+    list_display = (
+        "file_name",
+        "user",
+        "status",
+        "failure_reason",
+        "file_size_display",
+        "file_type",
+        "created_at",
+        "ip_address",
+    )
+
+    # 🔹 Filters on right sidebar
+    list_filter = (
+        "status",
+        "failure_reason",
+        "file_type",
+        "created_at",
+    )
+
+    # 🔹 Search bar
+    search_fields = (
+        "file_name",
+        "user__username",
+        "user__email",
+        "public_id",
+        "ip_address",
+    )
+
+    # 🔹 Ordering
+    ordering = ("-created_at",)
+
+    # 🔹 Read-only fields (logs should not be edited)
+    readonly_fields = (
+        "user",
+        "file_name",
+        "file_size",
+        "file_type",
+        "mime_type",
+        "status",
+        "failure_reason",
+        "failure_message",
+        "file_url",
+        "public_id",
+        "created_at",
+        "ip_address",
+    )
+
+    # 🔹 Field layout in detail view
+    fieldsets = (
+        ("User Info", {
+            "fields": ("user", "ip_address", "created_at"),
+        }),
+        ("File Snapshot", {
+            "fields": (
+                "file_name",
+                "file_size",
+                "file_type",
+                "mime_type",
+            ),
+        }),
+        ("Upload Result", {
+            "fields": (
+                "status",
+                "failure_reason",
+                "failure_message",
+            ),
+        }),
+        ("Cloudinary Details", {
+            "fields": (
+                "file_url",
+                "public_id",
+            ),
+        }),
+    )
+
+    # 🔹 Disable add / delete
+    def has_add_permission(self, request):
+        return False
+
+    # def has_delete_permission(self, request, obj=None):
+    #     return False
+
+    # 🔹 Pretty file size display
+    @admin.display(description="File Size")
+    def file_size_display(self, obj):
+        size = obj.file_size or 0
+        for unit in ["B", "KB", "MB", "GB", "TB"]:
+            if size < 1024:
+                return f"{size:.2f} {unit}"
+            size /= 1024
+        return f"{size:.2f} PB"

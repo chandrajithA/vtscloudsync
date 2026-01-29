@@ -102,8 +102,8 @@
 }
 
 .file-icon img{
-    width: 30px;
-    height: 30px;
+    width: 20px;
+    height: 20px;
 }
 
 .file-name {
@@ -155,7 +155,7 @@
     background: linear-gradient(
         90deg,
         #3b82f6 25%,
-        #60a5fa 37%,
+        #8ec1ff 37%,
         #3b82f6 63%
     );
     background-size: 200% 100%;
@@ -176,6 +176,23 @@
 /* ERROR */
 .error .bar-fill {
     background: #ef4444;
+}
+
+.check {
+    color: #22c55e;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.hidden {
+    display: none;
+}
+
+.browse-btn.disabled {
+    background: #d1d5db;      /* gray */
+    color: #6b7280;
+    cursor: not-allowed;
+    box-shadow: none;
 }
 
 @keyframes move {

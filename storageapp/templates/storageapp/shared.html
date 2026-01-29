@@ -19,9 +19,20 @@
 
     <!-- Stats -->
     <div class="shared-stats">
-        <div class="stat-card">
+
+        <div class="stat-card" data-filter="all">
+            <div class="stat-icon green">
+                <img src="{% static 'images/file.png' %}">
+            </div>
+            <div class="stat-info">
+                <h4>Total Shared</h4>
+                <strong>{{ total_shared }} Files</strong>
+            </div>
+        </div>
+
+        <div class="stat-card" data-filter="by-me">
             <div class="stat-icon blue">
-                <img src="{% static 'images/users.png' %}">
+                <img src="{% static 'images/share.png' %}">
             </div>
             <div class="stat-info">
                 <h4>Shared by you</h4>
@@ -29,7 +40,7 @@
             </div>
         </div>
 
-        <div class="stat-card">
+        <div class="stat-card" data-filter="with-me">
             <div class="stat-icon purple">
                 <img src="{% static 'images/shareicon.png' %}">
             </div>
@@ -38,16 +49,7 @@
                 <strong>{{ shared_with_me|length }} Files</strong>
             </div>
         </div>
-
-        <div class="stat-card">
-            <div class="stat-icon green">
-                <img src="{% static 'images/file.png' %}">
-            </div>
-            <div class="stat-info">
-                <h4>Total Shared</h4>
-                <strong>{{ shared_by_me|length|add:shared_with_me|length }} Files</strong>
-            </div>
-        </div>
+ 
     </div>
 
     <!-- Table -->
@@ -56,12 +58,13 @@
         <div class="shared-head">
             <span>Name</span>
             <span>Owner</span>
+            <span>Receiver</span>
             <span>Date</span>
             <span></span>
         </div>
 
         {% for s in shared_with_me %}
-        <div class="shared-row">
+        <div class="shared-row" data-type="with-me">
             <div class="shared-file">
                 <img src="{% static 'images/file.png' %}">
                 <div>
@@ -73,11 +76,12 @@
             </div>
 
             <span>{{ s.owner.username }}</span>
+            <span>Me</span>
             <span>{{ s.shared_at|date:"M d" }}</span>
 
-            <!-- VIEW -->
+            
             <div class="recent-actions">
-               {% if file.file_type == "other" %}
+                {% if file.file_type == "other" %}
                 <a href="{{ s.file.file_url }}" target="_blank" title="View" class="icon-btn">
                     <img src="{% static 'images/hidepassword_icon.png' %}">
                 </a>
@@ -89,13 +93,13 @@
                     onclick="openShareModal('{{ file.file_url }}')">
                         <img src="{% static 'images/shareicon.png' %}" alt="Share">
                 </a>
-             
+                
 
-            
+
                 <a href="{% url 'storageapp:download_file' s.file.id %}" class="icon-btn">
                     <img src="{% static 'images/download.png' %}">
                 </a>
-            
+
 
                 <!-- DELETE -->
                 <button onclick="removeShared('{{ s.id }}')" title="Remove" class="icon-btn">
@@ -106,6 +110,60 @@
             </div>
         </div>
         {% endfor %}
+
+        {% for s in shared_by_me %}
+        <div class="shared-row" data-type="by-me">
+            <div class="shared-file">
+                <img src="{% static 'images/file.png' %}">
+                <div>
+                    <div class="shared-file-name">{{ s.file.file_name }}</div>
+                    <div class="shared-file-meta">
+                        {{ s.file.file_size|filesizeformat }}
+                    </div>
+                </div>
+            </div>
+
+            <span>Me</span>
+            <span>{{ s.shared_with.username }}</span>
+            <span>{{ s.shared_at|date:"M d" }}</span>
+
+            <div class="recent-actions">
+                {% if file.file_type == "other" %}
+                <a href="{{ s.file.file_url }}" target="_blank" title="View" class="icon-btn">
+                    <img src="{% static 'images/hidepassword_icon.png' %}">
+                </a>
+                {% endif %}
+
+                <a href="javascript:void(0)"
+                    title="Share"
+                    class="icon-btn"
+                    onclick="openShareModal('{{ file.file_url }}')">
+                        <img src="{% static 'images/shareicon.png' %}" alt="Share">
+                </a>
+                
+
+
+                <a href="{% url 'storageapp:download_file' s.file.id %}" class="icon-btn">
+                    <img src="{% static 'images/download.png' %}">
+                </a>
+
+
+                <!-- DELETE -->
+                <button onclick="removeSharedOwn('{{ s.id }}')" title="Remove" class="icon-btn">
+                    <img src="{% static 'images/trash.png' %}">
+                </button>
+
+
+            </div>
+        </div>
+        {% endfor %}
+
+        {% if not shared_with_me and not shared_by_me %}
+        <p class="empty">
+            No files found
+        </p>
+        {% endif %}
+
 
         <p id="noSharedResults" class="empty" style="display:none;">
             No files found
@@ -180,6 +238,27 @@ function removeShared(sharedId) {
 }
 
 
+function removeSharedOwn(sharedId) {
+    if (!confirm("Remove this shared file?")) return;
+
+    fetch(`/user/shared/${sharedId}/remove_own/`, {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": "{{ csrf_token }}"
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.error || "Failed");
+        }
+    })
+    .catch(() => alert("Error occurred"));
+}
+
+
 let currentShareUrl = "";
 
 function openShareModal(url) {
@@ -209,6 +288,48 @@ function copyLink() {
     alert("Link copied to clipboard");
 }
 
+
+document.addEventListener("DOMContentLoaded", () => {
+    const cards = document.querySelectorAll(".stat-card");
+    const rows = document.querySelectorAll(".shared-row");
+    const noResults = document.getElementById("noSharedResults");
+
+    function filterRows(type) {
+        let visible = 0;
+
+        rows.forEach(row => {
+            if (type === "all" || row.dataset.type === type) {
+                row.style.display = "grid";
+                visible++;
+            } else {
+                row.style.display = "none";
+            }
+        });
+
+        noResults.style.display = visible === 0 ? "block" : "none";
+    }
+
+    cards.forEach(card => {
+        card.addEventListener("click", () => {
+
+            // ✅ Clear global search input if exists
+            const searchInput = document.getElementById("globalSearchInput");
+            if (searchInput) {
+                searchInput.value = "";
+            }
+
+            // ✅ Reset active state
+            cards.forEach(c => c.classList.remove("active"));
+            card.classList.add("active");
+
+            // ✅ Apply filter
+            filterRows(card.dataset.filter);
+        });
+    });
+
+    // ✅ Default: show ALL files on load
+    filterRows("all");
+});
 
 
 document.addEventListener("DOMContentLoaded", function () {

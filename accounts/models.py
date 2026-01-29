@@ -19,6 +19,7 @@ class UserLoginActivity(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE
     )
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
     login_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

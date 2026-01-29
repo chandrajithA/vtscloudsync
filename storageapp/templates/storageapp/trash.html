@@ -58,6 +58,12 @@
 
 </div>
 {% endfor %}
+{% if not files %}
+<p class="empty">
+    No files found
+</p>
+{% endif %}
+
 </div>
 
 {% endblock %}

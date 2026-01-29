@@ -14,7 +14,7 @@
 /* HEADER */
 .table-head {
     display: grid;
-    grid-template-columns: 3fr 1.5fr 1.5fr 1fr;
+    grid-template-columns: 3fr 1.5fr 1.5fr 220px;
     padding: 14px 20px;
     font-weight: 500;
     color: #6b7280;
@@ -24,7 +24,7 @@
 /* ROW */
 .file-row {
     display: grid;
-    grid-template-columns: 3fr 1.5fr 1.5fr 1fr;
+    grid-template-columns: 3fr 1.5fr 1.5fr 220px;
     padding: 16px 20px;
     align-items: center;
     border-bottom: 1px solid #f1f5f9;
@@ -66,6 +66,10 @@
     font-size: 14px;
     font-weight: 500;
     margin-bottom: 10px;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .file-meta {
@@ -82,13 +86,16 @@
 
 /* ACTIONS */
 .file-actions {
+    
     display: flex;
     gap: 12px;
     justify-content: flex-end;
+    align-items: center;
+    white-space: nowrap;
 }
 
 .file-actions img {
-    width: 18px;
+    width: 16px;
     cursor: pointer;
     opacity: 0.8;
 }
@@ -106,8 +113,9 @@
 .icon-btn {
     width: 34px;
     height: 34px;
+    flex-shrink: 0;
     border-radius: 50%;
-    background: #f3f4f6;
+    background: var(--primary-light);
     border: none;
     cursor: pointer;
     font-size: 14px;
@@ -118,7 +126,8 @@
 }
 
 .icon-btn:hover {
-    background: var(--primary-light);
+    
+    background: var(--white);
     transform: scale(1.08);
 }
 

@@ -90,7 +90,7 @@ def signin_page(request):
         else:
             # Log in the user
             login(request, user, 'django.contrib.auth.backends.ModelBackend')
-            UserLoginActivity.objects.create(user=user)
+            UserLoginActivity.objects.create(user=user,ip_address=get_client_ip(request))
             if remember_me == "on":
                 request.session.set_expiry(6 * 60 * 60)  
             else:
@@ -222,7 +222,7 @@ def signup_page(request):
 
             # 3️⃣ Login user
             login(request, user, 'django.contrib.auth.backends.ModelBackend')
-            UserLoginActivity.objects.create(user=user)
+            UserLoginActivity.objects.create(user=user,ip_address=get_client_ip(request))
             if user.is_superuser:
                 return redirect('storageapp:admin_dashboard')
             else:
@@ -238,6 +238,13 @@ def signup_page(request):
             }
             request.session['signupprefill'] = prefill
             return redirect('accounts:signup_page')
+        
+
+def get_client_ip(request):
+    xff = request.META.get("HTTP_X_FORWARDED_FOR")
+    if xff:
+        return xff.split(",")[0]
+    return request.META.get("REMOTE_ADDR")
         
 
 @login_required

@@ -97,7 +97,7 @@
 /* Header row */
 .shared-head {
     display: grid;
-    grid-template-columns: 3fr 1fr 1fr 80px;
+    grid-template-columns: 3fr 1.2fr 1.2fr 0.8fr 120px;
     font-size: 13px;
     font-weight: 600;
     color: #777;
@@ -108,7 +108,7 @@
 /* Rows */
 .shared-row {
     display: grid;
-    grid-template-columns: 3fr 1fr 1fr 80px;
+    grid-template-columns: 3fr 1.2fr 1.2fr 0.8fr 120px;
     align-items: center;
     padding: 14px 0;
     border-bottom: 1px solid #f0f0f0;
@@ -132,6 +132,10 @@
 .shared-file-name {
     font-weight: 500;
     font-size: 14px;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .shared-file-meta {
@@ -289,3 +293,13 @@
     box-shadow: 0 20px 50px rgba(0,0,0,0.25);
 }
 
+
+.stat-card {
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card.active {
+    box-shadow: 0 0 0 2px #7c3aed;
+    transform: translateY(-2px);
+}

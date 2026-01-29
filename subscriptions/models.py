@@ -2,8 +2,9 @@ from django.db import models
 
 class Plan(models.Model):
     name = models.CharField(max_length=50)
-    storage_limit = models.BigIntegerField()  # bytes
+    storage_limit = models.BigIntegerField(null=True, blank=True,help_text="Value in bytes.")  # bytes
     price = models.DecimalField(max_digits=8, decimal_places=2)
+    file_size_lmt = models.BigIntegerField(null=True, blank=True,help_text="Value in bytes. Leave empty if no limit") # bytes
 
     def __str__(self):
         return self.name

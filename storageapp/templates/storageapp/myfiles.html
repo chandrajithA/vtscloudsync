@@ -63,7 +63,7 @@
         <div class="file-actions">
             {% if file.file_url %}
 
-            {% if file.file_type == "other" %}
+            {% if file.file_type|lower != "other" %}
             <a href="{{ file.file_url }}" target="_blank" class="icon-btn">
                 <img src="{% static 'images/hidepassword_icon.png' %}" alt="">
             </a>
@@ -96,18 +96,18 @@
                 <img src="{% static 'images/trash.png' %}" alt="">
             </button>
             {% endif %}
-
-            
-
-            
-        </div>
-
-        
+   
+        </div>  
 
     </div>
     
-        
     {% endfor %}
+
+    {% if not files %}
+    <p class="empty">
+        No files found
+    </p>
+    {% endif %}
 
     <p id="noSearchResults" class="empty" style="display:none;">
         No files found

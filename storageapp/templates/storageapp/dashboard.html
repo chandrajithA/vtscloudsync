@@ -96,7 +96,7 @@
         </div>
 
         <div class="recent-actions">
-            {% if file.file_type == "other" %}
+            {% if file.file_type|lower != "other" %}
             <a href="{{ file.file_url }}" target="_blank" class="icon-btn">
                 <img src="{% static 'images/hidepassword_icon.png' %}" alt="">
             </a>
@@ -135,7 +135,14 @@
 
     </div>
     {% endfor %}
+
 </div>
+
+{% if not recent_files %}
+<p class="empty">
+    No files found
+</p>
+{% endif %}
 
 <p id="noRecentResults" class="empty" style="display:none;">
     No files found
