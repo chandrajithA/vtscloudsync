@@ -243,28 +243,25 @@ def upload_page(request):
             )
             
         if request.method == 'POST':
-            files = request.FILES.getlist('file')
+            file = request.FILES.get('file')
 
-            if not files:
+            if not file:
                 return render(request, "storageapp/upload.html", {
                     "error": "Please select a file",
                     "base_template": base_template
                 })
             
             used = (
-                CloudFile.objects
-                .filter(user=request.user, is_deleted=False)
-                .aggregate(total=Sum("file_size"))["total"] or 0
-            )
+                    CloudFile.objects
+                    .filter(user=request.user, is_deleted=False)
+                    .aggregate(total=Sum("file_size"))["total"] or 0
+                )
 
             sub = UserSubscription.objects.select_related("plan").filter(user=request.user).first()
             limit = sub.plan.storage_limit if sub and sub.plan else 0
-
             file_size_limit = sub.plan.file_size_lmt if sub and sub.plan.file_size_lmt else None
 
             remaining_space = limit - used
-
-            
 
             if remaining_space <= 0:
                 return JsonResponse(
@@ -272,261 +269,267 @@ def upload_page(request):
                     status=403
                 )
 
-            uploaded_files = []
-            rejected_files = []
-
             
-            for file in files:
-
-                # 🚫 If this file does not fit, skip it
-                if file.size > remaining_space:
-                    rejected_files.append({
-                        "name": file.name,
-                        "reason": "Not enough storage"
-                    })
-                    UploadHistory.objects.create(
-                        user=request.user,
-                        file_name=file.name,
-                        file_size=file.size,
-                        status="failed",
-                        failure_reason="STORAGE_FULL",
-                        failure_message="Not enough storage",
-                        ip_address=get_client_ip(request),
-                    )
-                    continue
-
-                if file_size_limit and file.size > file_size_limit:
-                    rejected_files.append({
-                        "name": file.name,
-                        "reason": f"File should be less than {filesizeformat(file_size_limit)}"
-                    })
-                    UploadHistory.objects.create(
-                        user=request.user,
-                        file_name=file.name,
-                        file_size=file.size,
-                        status="failed",
-                        failure_reason="FILE_TOO_LARGE",
-                        failure_message=f"File should be less than {filesizeformat(file_size_limit)}",
-                        ip_address=get_client_ip(request),
-                    )
-                    continue
-
-                
-            
-                mime_type, _ = mimetypes.guess_type(file.name)
-
-                uploaded_file = None
-                file_url = None
-                public_id = None
-
-                if mime_type and mime_type.startswith("image"):
-                    file_type = "image"
-                    try:
-                        if file.size > MAX_SIMPLE_UPLOAD:
-                            # 🔥 LARGE FILE
-                            result = cloudinary.uploader.upload_large(
-                                file,
-                                resource_type="raw",
-                                folder="images",
-                                use_filename=True,
-                                unique_filename=True,
-                                chunk_size=6000000
-                            )
-                            file_url = result["secure_url"]
-                            public_id = result["public_id"] 
-                        else:
-                            # 🔹 SMALL FILE
-                            result = cloudinary.uploader.upload(
-                                file,
-                                resource_type="raw",
-                                folder="images",
-                                use_filename=True,
-                                unique_filename=True,
-                            )
-                            file_url = result["secure_url"]
-                            public_id = result["public_id"] 
-
-                    except Exception as e:
-                        rejected_files.append({
-                            "name": file.name,
-                            "reason": "Cloudinary rejected file (size limit exceeded)"
-                        })
-                        UploadHistory.objects.create(
-                            user=request.user,
-                            file_name=file.name,
-                            file_size=file.size,
-                            status="failed",
-                            failure_reason="CLOUDINARY_LIMIT",
-                            failure_message="Cloudinary rejected file (size limit exceeded)",
-                            ip_address=get_client_ip(request),
-                        )
-                        continue
-
-                # ✅ VIDEO
-                elif mime_type and mime_type.startswith("video"):
-                    file_type = "video"
-                    try:
-                        if file.size > MAX_SIMPLE_UPLOAD:
-                            # 🔥 LARGE FILE
-                            result = cloudinary.uploader.upload_large(
-                                file,
-                                resource_type="raw",
-                                folder="videos",
-                                use_filename=True,
-                                unique_filename=True,
-                                chunk_size=6000000
-                            )
-                            file_url = result["secure_url"]
-                            public_id = result["public_id"] 
-                        else:
-                            # 🔹 SMALL FILE
-                            result = cloudinary.uploader.upload(
-                                file,
-                                resource_type="raw",
-                                folder="videos",
-                                use_filename=True,
-                                unique_filename=True,
-                            )
-                            file_url = result["secure_url"]
-                            public_id = result["public_id"] 
-
-                    except Exception as e:
-                        rejected_files.append({
-                            "name": file.name,
-                            "reason": "Cloudinary rejected file (size limit exceeded)"
-                        })
-                        UploadHistory.objects.create(
-                            user=request.user,
-                            file_name=file.name,
-                            file_size=file.size,
-                            status="failed",
-                            failure_reason="CLOUDINARY_LIMIT",
-                            failure_message="Cloudinary rejected file (size limit exceeded)",
-                            ip_address=get_client_ip(request),
-                        )
-                        continue
-                    
-
-                # ✅ PDF
-                elif mime_type == "application/pdf":
-                    file_type = "document"
-                    try:
-                        if file.size > MAX_SIMPLE_UPLOAD:
-                            # 🔥 LARGE FILE
-                            result = cloudinary.uploader.upload_large(
-                                file,
-                                resource_type="raw",
-                                folder="PDFs",
-                                use_filename=True,
-                                unique_filename=True,
-                                chunk_size=6000000
-                            )
-                            file_url = result["secure_url"]
-                            public_id = result["public_id"] 
-                        else:
-                            # 🔹 SMALL FILE
-                            result = cloudinary.uploader.upload(
-                                file,
-                                resource_type="raw",
-                                folder="PDFs",
-                                use_filename=True,
-                                unique_filename=True,
-                            )
-                            file_url = result["secure_url"]
-                            public_id = result["public_id"] 
-                    
-                    except Exception as e:
-                        rejected_files.append({
-                            "name": file.name,
-                            "reason": "Cloudinary rejected file (size limit exceeded)"
-                        })
-                        UploadHistory.objects.create(
-                            user=request.user,
-                            file_name=file.name,
-                            file_size=file.size,
-                            status="failed",
-                            failure_reason="CLOUDINARY_LIMIT",
-                            failure_message="Cloudinary rejected file (size limit exceeded)",
-                            ip_address=get_client_ip(request),
-                        )
-                        continue
-                    
-
-                # ✅ OTHER FILES
-                else:
-                    file_type = "other"
-                    try:
-                        if file.size > MAX_SIMPLE_UPLOAD:
-                            # 🔥 LARGE FILE
-                            result = cloudinary.uploader.upload_large(
-                                file,
-                                resource_type="raw",
-                                folder="documents",
-                                use_filename=True,
-                                unique_filename=True,
-                                chunk_size=6000000
-                            )
-                            file_url = result["secure_url"]
-                            public_id = result["public_id"] 
-                        else:
-                            # 🔹 SMALL FILE
-                            result = cloudinary.uploader.upload(
-                                file,
-                                resource_type="raw",
-                                folder="documents",
-                                use_filename=True,
-                                unique_filename=True,
-                            )
-                            file_url = result["secure_url"]
-                            public_id = result["public_id"] 
-
-                    except Exception as e:
-                        rejected_files.append({
-                            "name": file.name,
-                            "reason": "Cloudinary rejected file (size limit exceeded)"
-                        })
-                        UploadHistory.objects.create(
-                            user=request.user,
-                            file_name=file.name,
-                            file_size=file.size,
-                            status="failed",
-                            failure_reason="CLOUDINARY_LIMIT",
-                            failure_message="Cloudinary rejected file (size limit exceeded)",
-                            ip_address=get_client_ip(request),
-                        )
-                        continue
-                    
-
-                CloudFile.objects.create(
-                    user=request.user,
-                    file_name=file.name,
-                    file_size=file.size,
-                    file_type=file_type,
-                    uploaded_file=uploaded_file,
-                    file_url=file_url,
-                    public_id=public_id,
-                )
-
+            # 🚫 If this file does not fit, skip it
+            if file.size > remaining_space:
                 UploadHistory.objects.create(
                     user=request.user,
                     file_name=file.name,
                     file_size=file.size,
-                    file_type=file_type,
-                    mime_type=mime_type,
-                    status="success",
-                    file_url=file_url,
-                    public_id=public_id,
+                    status="failed",
+                    failure_reason="STORAGE_FULL",
+                    failure_message="Not enough storage",
                     ip_address=get_client_ip(request),
                 )
+                return JsonResponse({
+                    "success": True,
+                    "rejected_files": [{
+                        "name": file.name,
+                        "reason": "Not enough storage"
+                    }]
+                })
 
-                remaining_space -= file.size
-                uploaded_files.append(file.name)
+            if file_size_limit and file.size > file_size_limit:
+                UploadHistory.objects.create(
+                    user=request.user,
+                    file_name=file.name,
+                    file_size=file.size,
+                    status="failed",
+                    failure_reason="FILE_TOO_LARGE",
+                    failure_message=f"File should be less than {filesizeformat(file_size_limit)}",
+                    ip_address=get_client_ip(request),
+                )
+                return JsonResponse({
+                    "success": True,
+                    "rejected_files": [{
+                        "name": file.name,
+                        "reason": f"File should be less than {filesizeformat(file_size_limit)}"
+                    }]
+                })
 
-            return JsonResponse({
-                "success": True,
-                "rejected_files": rejected_files,
-                "uploaded_files":uploaded_files,
-            })
+            
+        
+            mime_type, _ = mimetypes.guess_type(file.name)
+
+            uploaded_file = None
+            file_url = None
+            public_id = None
+
+            if mime_type and mime_type.startswith("image"):
+                file_type = "image"
+                try:
+                    if file.size > MAX_SIMPLE_UPLOAD:
+                        # 🔥 LARGE FILE
+                        result = cloudinary.uploader.upload_large(
+                            file,
+                            resource_type="raw",
+                            folder="images",
+                            use_filename=True,
+                            unique_filename=True,
+                            chunk_size=6000000
+                        )
+                        file_url = result["secure_url"]
+                        public_id = result["public_id"] 
+                    else:
+                        # 🔹 SMALL FILE
+                        result = cloudinary.uploader.upload(
+                            file,
+                            resource_type="raw",
+                            folder="images",
+                            use_filename=True,
+                            unique_filename=True,
+                        )
+                        file_url = result["secure_url"]
+                        public_id = result["public_id"] 
+
+                except Exception:
+                    UploadHistory.objects.create(
+                        user=request.user,
+                        file_name=file.name,
+                        file_size=file.size,
+                        status="failed",
+                        failure_reason="CLOUDINARY_LIMIT",
+                        failure_message="Cloudinary rejected file (size limit exceeded)",
+                        ip_address=get_client_ip(request),
+                    )
+                    return JsonResponse({
+                        "success": True,
+                        "rejected_files": [{
+                            "name": file.name,
+                            "reason": "Cloudinary rejected file (size limit exceeded)"
+                        }]
+                    })
+
+            # ✅ VIDEO
+            elif mime_type and mime_type.startswith("video"):
+                file_type = "video"
+                try:
+                    if file.size > MAX_SIMPLE_UPLOAD:
+                        # 🔥 LARGE FILE
+                        result = cloudinary.uploader.upload_large(
+                            file,
+                            resource_type="raw",
+                            folder="videos",
+                            use_filename=True,
+                            unique_filename=True,
+                            chunk_size=6000000
+                        )
+                        file_url = result["secure_url"]
+                        public_id = result["public_id"] 
+                    else:
+                        # 🔹 SMALL FILE
+                        result = cloudinary.uploader.upload(
+                            file,
+                            resource_type="raw",
+                            folder="videos",
+                            use_filename=True,
+                            unique_filename=True,
+                        )
+                        file_url = result["secure_url"]
+                        public_id = result["public_id"] 
+
+                except Exception:
+                    
+                    UploadHistory.objects.create(
+                        user=request.user,
+                        file_name=file.name,
+                        file_size=file.size,
+                        status="failed",
+                        failure_reason="CLOUDINARY_LIMIT",
+                        failure_message="Cloudinary rejected file (size limit exceeded)",
+                        ip_address=get_client_ip(request),
+                    )
+                    return JsonResponse({
+                        "success": True,
+                        "rejected_files": [{
+                            "name": file.name,
+                            "reason": "Cloudinary rejected file (size limit exceeded)"
+                        }]
+                    })
+                
+
+            # ✅ PDF
+            elif mime_type == "application/pdf":
+                file_type = "document"
+                try:
+                    if file.size > MAX_SIMPLE_UPLOAD:
+                        # 🔥 LARGE FILE
+                        result = cloudinary.uploader.upload_large(
+                            file,
+                            resource_type="raw",
+                            folder="PDFs",
+                            use_filename=True,
+                            unique_filename=True,
+                            chunk_size=6000000
+                        )
+                        file_url = result["secure_url"]
+                        public_id = result["public_id"] 
+                    else:
+                        # 🔹 SMALL FILE
+                        result = cloudinary.uploader.upload(
+                            file,
+                            resource_type="raw",
+                            folder="PDFs",
+                            use_filename=True,
+                            unique_filename=True,
+                        )
+                        file_url = result["secure_url"]
+                        public_id = result["public_id"] 
+                
+                except Exception as e:
+                    UploadHistory.objects.create(
+                        user=request.user,
+                        file_name=file.name,
+                        file_size=file.size,
+                        status="failed",
+                        failure_reason="CLOUDINARY_LIMIT",
+                        failure_message="Cloudinary rejected file (size limit exceeded)",
+                        ip_address=get_client_ip(request),
+                    )
+                    return JsonResponse({
+                        "success": True,
+                        "rejected_files": [{
+                            "name": file.name,
+                            "reason": "Cloudinary rejected file (size limit exceeded)"
+                        }]
+                    })
+                
+
+            # ✅ OTHER FILES
+            else:
+                file_type = "other"
+                try:
+                    if file.size > MAX_SIMPLE_UPLOAD:
+                        # 🔥 LARGE FILE
+                        result = cloudinary.uploader.upload_large(
+                            file,
+                            resource_type="raw",
+                            folder="documents",
+                            use_filename=True,
+                            unique_filename=True,
+                            chunk_size=6000000
+                        )
+                        file_url = result["secure_url"]
+                        public_id = result["public_id"] 
+                    else:
+                        # 🔹 SMALL FILE
+                        result = cloudinary.uploader.upload(
+                            file,
+                            resource_type="raw",
+                            folder="documents",
+                            use_filename=True,
+                            unique_filename=True,
+                        )
+                        file_url = result["secure_url"]
+                        public_id = result["public_id"] 
+
+                except Exception as e:
+                    
+                    UploadHistory.objects.create(
+                        user=request.user,
+                        file_name=file.name,
+                        file_size=file.size,
+                        status="failed",
+                        failure_reason="CLOUDINARY_LIMIT",
+                        failure_message="Cloudinary rejected file (size limit exceeded)",
+                        ip_address=get_client_ip(request),
+                    )
+                    return JsonResponse({
+                        "success": True,
+                        "rejected_files": [{
+                            "name": file.name,
+                            "reason": "Cloudinary rejected file (size limit exceeded)"
+                        }]
+                    })
+                
+
+            CloudFile.objects.create(
+                user=request.user,
+                file_name=file.name,
+                file_size=file.size,
+                file_type=file_type,
+                uploaded_file=uploaded_file,
+                file_url=file_url,
+                public_id=public_id,
+            )
+
+            UploadHistory.objects.create(
+                user=request.user,
+                file_name=file.name,
+                file_size=file.size,
+                file_type=file_type,
+                mime_type=mime_type,
+                status="success",
+                file_url=file_url,
+                public_id=public_id,
+                ip_address=get_client_ip(request),
+            )
+
+        return JsonResponse({
+            "success": True,
+            "uploaded_files": [file.name],
+            "rejected_files": []
+        })
         
     else: 
         next_url = reverse('storageapp:upload_page')

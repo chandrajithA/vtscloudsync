@@ -34,6 +34,10 @@
     </button>
     {% endif %}
 
+    <p id="uploadStatus"
+        style="margin-top:10px; font-weight:500; display:none;">
+    </p>
+
     <input type="file" id="fileInput" name="file" multiple hidden {% if storage_near_limit %}disabled{% endif %}>
 
 </div>
@@ -97,153 +101,189 @@
 const input = document.getElementById("fileInput");
 const uploadList = document.getElementById("uploadList");
 const noUploadText = document.getElementById("no-upload-text");
+const browseBtn = document.querySelector(".browse-btn");
+const uploadStatus = document.getElementById("uploadStatus");
 const csrfToken = "{{ csrf_token }}";
 
 input.addEventListener("change", () => {
-    [...input.files].forEach(uploadFile);
+    const files = [...input.files];
+    uploadFilesSequentially(files);
 });
 
-function uploadFile(file) {
-    const row = document.createElement("div");
-    row.className = "upload-row uploading";
+async function uploadFilesSequentially(files) {
+    const total = files.length;
+    let completed = 0;
 
-    let iconUrl = "{% static 'images/server.png' %}";
+    // 🔒 Hide browse button
+    input.disabled = true;
+    if (browseBtn) browseBtn.style.display = "none";
 
-    row.innerHTML = `
-        <div class="upload-left">
-            <div class="file-icon">
+    // 📊 Show status
+    uploadStatus.style.display = "block";
+    uploadStatus.textContent = `Uploading 0 of ${total} files`;
+
+    for (const file of files) {
+        await uploadSingleFile(file);
+        completed++;
+
+        // 🔄 Live update
+        uploadStatus.textContent =
+            completed < total
+                ? `Uploading ${completed} of ${total} files`
+                : `Finished - (${total} files)`;
+    }
+
+    // ✅ Show browse button again
+    input.disabled = false;
+    input.value = "";  
+    if (browseBtn) browseBtn.style.display = "inline-block";
+    
+}
+
+function uploadSingleFile(file) {
+    return new Promise((resolve) => {
+        const row = document.createElement("div");
+        row.className = "upload-row uploading";
+
+        let iconUrl = "{% static 'images/server.png' %}";
+
+        row.innerHTML = `
+            <div class="upload-left">
+                <div class="file-icon">
+                    
+                        <img class="file-icon-img" class="file-icon" src="${iconUrl}" alt="file">
+                </div>
                 
-                    <img class="file-icon-img" class="file-icon" src="${iconUrl}" alt="file">
+                <div>
+                    <div class="file-name">${file.name}</div>
+                    <div class="file-size">${formatFileSize(file.size)}</div>
+                </div>
             </div>
-            
-            <div>
-                <div class="file-name">${file.name}</div>
-                <div class="file-size">${formatFileSize(file.size)}</div>
+
+            <div class="upload-right">
+                <span class="status-text">Uploading…</span>
+                <span class="check hidden">✔</span>
+                <img src="{% static 'images/close.png' %}" class="cancel-btn">
             </div>
-        </div>
 
-        <div class="upload-right">
-            <span class="status-text">Uploading…</span>
-            <span class="check hidden">✔</span>
-            <img src="{% static 'images/close.png' %}" class="cancel-btn">
-        </div>
+            <div class="bar">
+                <div class="bar-fill"></div>
+            </div>
+        `;
 
-        <div class="bar">
-            <div class="bar-fill"></div>
-        </div>
-    `;
+        uploadList.prepend(row);
 
-    uploadList.prepend(row);
-
-    noUploadText.style.display = "none";
-    const bar = row.querySelector(".bar-fill");
-    const status = row.querySelector(".status-text");
-
-    const formData = new FormData();
-    formData.append("file", file);
-
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", "{% url 'storageapp:upload_page' %}");
-    xhr.setRequestHeader("X-CSRFToken", csrfToken);
-
-    xhr.upload.onprogress = (e) => {
-        if (e.lengthComputable) {
-            const percent = (e.loaded / e.total) * 100;
-            bar.style.width = percent + "%";
-        }
-    };
-
-    xhr.onload = () => {
-        const res = JSON.parse(xhr.responseText);
-        if (xhr.status === 200 && res.success) {
-
-            const rejected = res.rejected_files?.find(
-                f => f.name === file.name
-            );
-
-            if (rejected) {
-                row.classList.add("error");
-                status.innerHTML = `
-                    <span class="error-text">
-                        ${rejected.reason}
-                    </span>
-                `;
-                bar.style.background = "#ef4444";
-                cancelBtn.style.display = "none";
-                row.querySelector(".file-icon-img").src = "{% static 'images/close.png' %}";
-                return;
+            if (noUploadText){
+                noUploadText.style.display = "none";
             }
-            
-                row.classList.remove("uploading");
-                row.classList.add("completed");
+        
+        const bar = row.querySelector(".bar-fill");
+        const status = row.querySelector(".status-text");
+        const cancelBtn = row.querySelector(".cancel-btn");
 
-                bar.style.width = "100%";
-                status.innerHTML = "Completed";
+        const formData = new FormData();
+        formData.append("file", file);
 
-                cancelBtn.style.display = "none";
-                // show check mark
-                const check = row.querySelector(".check");
-                check.classList.remove("hidden");
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "{% url 'storageapp:upload_page' %}");
+        xhr.setRequestHeader("X-CSRFToken", csrfToken);
 
-                // change left icon to tick
-                row.querySelector(".file-icon-img").src = "{% static 'images/checkmark.png' %}";
-            
-        } 
-        else if (xhr.status === 403) {
-            row.classList.add("error");
-            status.innerText = `
+        xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) {
+                const percent = (e.loaded / e.total) * 100;
+                bar.style.width = percent + "%";
+            }
+        };
+
+        xhr.onload = () => {
+            const res = JSON.parse(xhr.responseText || "{}");
+            if (xhr.status === 200 && res.success) {
+
+                const rejected = res.rejected_files?.[0];
+
+                if (rejected) {
+                    row.classList.add("error");
+                    status.innerHTML = `
                         <span class="error-text">
                             ${rejected.reason}
                         </span>
                     `;
-            bar.style.background = "#ef4444";
-            cancelBtn.style.display = "none";
-            row.querySelector(".file-icon-img").src = "{% static 'images/close.png' %}";
-        }
-        else {
+                    bar.style.background = "#ef4444";
+                    cancelBtn.style.display = "none";
+                    row.querySelector(".file-icon-img").src = "{% static 'images/close.png' %}";
+                }
+                else{
+                    row.classList.remove("uploading");
+                    row.classList.add("completed");
+
+                    bar.style.width = "100%";
+                    status.innerHTML = "Completed";
+
+                    cancelBtn.style.display = "none";
+                    // show check mark
+                    const check = row.querySelector(".check");
+                    check.classList.remove("hidden");
+
+                    // change left icon to tick
+                    row.querySelector(".file-icon-img").src = "{% static 'images/checkmark.png' %}";
+                }        
+                
+            } 
+            else {
+                row.classList.add("error");
+                status.innerHTML = "Failed";
+                bar.style.background = "#ef4444";
+                cancelBtn.style.display = "none";
+                row.querySelector(".file-icon-img").src = "{% static 'images/close.png' %}";
+            }
+            resolve();
+        };
+
+        xhr.onerror = () => {
+            status.innerHTML = "Network error";
             row.classList.add("error");
-            status.innerHTML = "Failed";
             bar.style.background = "#ef4444";
             cancelBtn.style.display = "none";
             row.querySelector(".file-icon-img").src = "{% static 'images/close.png' %}";
-        }
-    };
+            resolve();
+        };
 
-    const cancelBtn = row.querySelector(".cancel-btn");
+        cancelBtn.addEventListener("click", () => {
+            xhr.abort();  // ❌ stops upload immediately
+            row.classList.add("cancelled");
+            status.innerText = "Cancelled";
+            bar.style.background = "#ef4444";
+            row.querySelector(".file-icon-img").src = "{% static 'images/close.png' %}";
+            
+            // 🔥 Notify backend
+            const cancelData = new FormData();
+            cancelData.append("file_name", file.name);
+            cancelData.append("file_size", file.size);
 
-    cancelBtn.addEventListener("click", () => {
-        xhr.abort();  // ❌ stops upload immediately
-        row.classList.add("cancelled");
-        status.innerText = "Cancelled";
-        bar.style.background = "#ef4444";
-        row.querySelector(".file-icon-img").src = "{% static 'images/close.png' %}";
-
-        // 🔥 Notify backend
-        const cancelData = new FormData();
-        cancelData.append("file_name", file.name);
-        cancelData.append("file_size", file.size);
-
-        fetch("{% url 'storageapp:upload_cancelled' %}", {
-            method: "POST",
-            headers: {
-                "X-CSRFToken": csrfToken
-            },
-            body: cancelData
+            fetch("{% url 'storageapp:upload_cancelled' %}", {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": csrfToken
+                },
+                body: cancelData
+            });
+            resolve();
         });
+
+        xhr.send(formData);
     });
+    
+}
 
-    xhr.send(formData);
+function formatFileSize(bytes) {
+    if (!bytes || bytes === 0) return "0 Bytes";
 
-    function formatFileSize(bytes) {
-        if (!bytes || bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
 
-        const k = 1024;
-        const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-        const value = bytes / Math.pow(k, i);
-        return value.toFixed(value < 10 && i > 0 ? 2 : 1) + " " + sizes[i];
-    }
+    const value = bytes / Math.pow(k, i);
+    return value.toFixed(value < 10 && i > 0 ? 2 : 1) + " " + sizes[i];
 }
 </script>
 

@@ -3,7 +3,7 @@ from .models import *
 
 @admin.register(Plan)
 class PlanAdmin(admin.ModelAdmin):
-    list_display = ("name", "formatted_storage", "price","file_size_lmt")
+    list_display = ("name", "formatted_storage", "price","formatted_file_size")
     search_fields = ("name",)
     ordering = ("price",)
 
@@ -16,6 +16,21 @@ class PlanAdmin(admin.ModelAdmin):
         return f"{size:.2f} PB"
 
     formatted_storage.short_description = "Storage Limit"
+
+    def formatted_file_size(self, obj):
+        if obj.file_size_lmt is None:
+            return "No limit"
+        
+        filesizelimit = obj.file_size_lmt
+        for unit in ["B", "KB", "MB", "GB", "TB"]:
+            if filesizelimit < 1024:
+                return f"{filesizelimit:.2f} {unit}"
+            filesizelimit /= 1024
+        return f"{filesizelimit:.2f} PB"
+
+    formatted_file_size.short_description = "File size Limit"
+
+    
 
 
 @admin.register(UserSubscription)

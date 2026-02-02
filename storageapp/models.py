@@ -112,6 +112,9 @@ class UploadHistory(models.Model):
 
     def __str__(self):
         return f"{self.file_name} - {self.status}"
+    
+
+
 
 
    

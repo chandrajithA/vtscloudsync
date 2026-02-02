@@ -220,8 +220,8 @@ if (usernameInput || statusText || changeBtn){
             return;
         }
 
-        if (username.length > 16) {
-            statusText.innerText = "User ID must be less than 16 characters";
+        if (username.length > 32) {
+            statusText.innerText = "User ID must be less than 32 characters";
             statusText.style.color = "red";
             return;
         }
