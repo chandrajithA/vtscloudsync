@@ -689,35 +689,29 @@ def upload_page(request):
                     }]
                 })  
 
-            try:
-                CloudFile.objects.create(
-                    user=request.user,
-                    file_name=file.name,
-                    file_size=file.size,
-                    file_type=file_type,
-                    file_url=file_url,
-                    public_id=s3_key,
-                )
-                print("CloudFile saved")
+            CloudFile.objects.create(
+                user=request.user,
+                file_name=file.name,
+                file_size=file.size,
+                file_type=file_type,
+                file_url=generate_presigned_url(
+                            s3_key,
+                            filename=file.name
+                        ),
+                public_id=s3_key,
+            )
 
-                UploadHistory.objects.create(
-                    user=request.user,
-                    file_name=file.name,
-                    file_size=file.size,
-                    file_type=file_type,
-                    mime_type=mime_type,
-                    status="success",
-                    file_url=file_url,
-                    public_id=s3_key,
-                    ip_address=get_client_ip(request),
-                )
-                print("UploadHistory saved")
-
-            except Exception as e:
-                import traceback
-                print("DB ERROR:")
-                traceback.print_exc()
-                return JsonResponse({"error": str(e)}, status=500)
+            UploadHistory.objects.create(
+                user=request.user,
+                file_name=file.name,
+                file_size=file.size,
+                file_type=file_type,
+                mime_type=mime_type,
+                status="success",
+                file_url=file_url,
+                public_id=s3_key,
+                ip_address=get_client_ip(request),
+            )
 
         return JsonResponse({
             "success": True,
