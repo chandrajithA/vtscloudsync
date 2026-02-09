@@ -15,7 +15,7 @@ class CloudFile(models.Model):
     file_name = models.CharField(max_length=255)
     file_size = models.BigIntegerField()
     file_type = models.CharField(max_length=20, choices=FILE_TYPES)
-    file_url = models.URLField(null=True, blank=True)
+    file_url = models.URLField(max_length=1000, null=True, blank=True)
     public_id = models.CharField(max_length=255,null=True) 
     uploaded_at = models.DateTimeField(auto_now_add=True)
     is_deleted = models.BooleanField(default=False)
@@ -99,7 +99,7 @@ class UploadHistory(models.Model):
     failure_message = models.TextField(null=True, blank=True)
 
     # 🔹 Cloudinary info (only if success)
-    file_url = models.URLField(null=True, blank=True)
+    file_url = models.URLField(max_length=1000, null=True, blank=True)
     public_id = models.CharField(max_length=255, null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
