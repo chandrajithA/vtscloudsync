@@ -676,6 +676,7 @@ def upload_page(request):
                     failure_message=str(e),
                     ip_address=get_client_ip(request),
                 )
+                print("UPLOAD ERROR:", str(e))
                 return JsonResponse({
                     "success": True,
                     "rejected_files": [{
