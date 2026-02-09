@@ -9,13 +9,10 @@ from django.db.models import Count, Sum
 from django.views.decorators.http import require_POST
 from django.db.models import Q
 from django.contrib.auth import get_user_model
-import requests
-from django.http import StreamingHttpResponse, Http404
+from django.http import Http404
 from subscriptions.models import UserSubscription
 from django.db.models import Q
 from accounts.models import UserLoginActivity
-from django.db.models.functions import TruncMonth
-from django.db.models.functions import TruncDate
 from datetime import date
 from django.urls import reverse
 from django.template.defaultfilters import filesizeformat
@@ -27,6 +24,7 @@ from django.contrib import messages
 from .s3_utils import *
 from django.core.cache import cache
 from storageapp.utils import cleanup_trash
+from collections import defaultdict
 
 
 
@@ -112,7 +110,6 @@ def admin_dashboard(request):
 
 
 
-
 @login_required
 def admin_user_activity_api(request):
     if not request.user.is_superuser:
@@ -124,30 +121,21 @@ def admin_user_activity_api(request):
     # Last 7 IST dates
     last_7_days = [today - timedelta(days=i) for i in range(6, -1, -1)]
 
-    # ✅ Group logins by local date
-    qs = (
-        UserLoginActivity.objects
-        .annotate(
-            login_date=TruncDate(
-                "login_at",
-                tzinfo=timezone.get_current_timezone()
-            )
-        )
-        .values("login_date")
-        .annotate(count=Count("id"))
-    )
+    # Fetch login records
+    activities = UserLoginActivity.objects.all()
 
-    # Convert queryset → dict
-    data_map = {
-        item["login_date"]: item["count"]
-        for item in qs
-    }
+    # Group in Python
+    data_map = defaultdict(int)
+
+    for act in activities:
+        local_day = timezone.localtime(act.login_at).date()
+        data_map[local_day] += 1
 
     labels = []
     data = []
 
     for day in last_7_days:
-        labels.append(day.strftime("%a"))  # Sun, Mon
+        labels.append(day.strftime("%a"))  # Sun, Mon, Tue
         data.append(data_map.get(day, 0))
 
     return JsonResponse({
@@ -204,25 +192,21 @@ def admin_storage_growth_api(request):
             month = 12
             year -= 1
 
-    # 🔹 Truncate uploaded_at in DB (UTC → IST handled by Django)
-    qs = (
-        CloudFile.objects
-        .filter(is_deleted=False)
-        .annotate(month=TruncMonth("uploaded_at", tzinfo=timezone.get_current_timezone()))
-        .values("month")
-        .annotate(total_size=Sum("file_size"))
-    )
+    # fetch files
+    files = CloudFile.objects.filter(is_deleted=False)
 
-    storage_map = {
-        item["month"].date(): item["total_size"]
-        for item in qs
-    }
+    storage_map = {}
+
+    for f in files:
+        local_date = timezone.localtime(f.uploaded_at).date()
+        key = local_date.replace(day=1)
+        storage_map[key] = storage_map.get(key, 0) + f.file_size
 
     labels = []
     data = []
 
     for m in months:
-        labels.append(m.strftime("%b %Y"))   # Jan 2026
+        labels.append(m.strftime("%b %Y"))
         size = storage_map.get(m, 0)
         mb = size / (1024 * 1024)
         data.append(round(mb, 2))
