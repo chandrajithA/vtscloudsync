@@ -664,9 +664,14 @@ def upload_page(request):
                 folder = "documents"
 
             try:
+                print("Uploading to S3...")
                 file_url, s3_key = upload_to_s3(file, folder) 
+                print("Upload success")
 
             except Exception as e:
+                import traceback
+                print("FULL ERROR:")
+                traceback.print_exc()
                 UploadHistory.objects.create(
                     user=request.user,
                     file_name=file.name,
@@ -676,7 +681,6 @@ def upload_page(request):
                     failure_message=str(e),
                     ip_address=get_client_ip(request),
                 )
-                print("UPLOAD ERROR:", str(e))
                 return JsonResponse({
                     "success": True,
                     "rejected_files": [{
