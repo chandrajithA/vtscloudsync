@@ -1,5 +1,7 @@
 {% extends base_template %}
 {% load static %}
+{% load humanize %}
+{% load tz %}
 
 {% block title %}Trash - Cloudsync{% endblock %}
 
@@ -54,8 +56,12 @@
         </div>
     </div>
 
+    <div class="file-date">
+        {{ file.deleted_at|localtime|date:"d M y, h:i A" }}
+    </div>
+
     <div class="trash-meta">
-        <span>Deleted {{ file.deleted_at|timesince }} ago</span>
+        <span>Deleted {{ file.deleted_at|naturaltime }} </span>
         <span class="expire">Expires in {{ file.days_left }} days</span>
     </div>
 

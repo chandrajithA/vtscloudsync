@@ -97,7 +97,7 @@
 /* Header row */
 .shared-head {
     display: grid;
-    grid-template-columns: 3fr 1.2fr 1.2fr 0.8fr 120px;
+    grid-template-columns: 3fr 1.2fr 1.2fr 1.2fr 120px;
     font-size: 13px;
     font-weight: 600;
     color: #777;
@@ -108,7 +108,7 @@
 /* Rows */
 .shared-row {
     display: grid;
-    grid-template-columns: 3fr 1.2fr 1.2fr 0.8fr 120px;
+    grid-template-columns: 3fr 1.2fr 1.2fr 1.2fr 120px;
     align-items: center;
     padding: 14px 0;
     border-bottom: 1px solid #f0f0f0;

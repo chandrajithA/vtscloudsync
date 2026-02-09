@@ -12,8 +12,9 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 import environ
-import cloudinary
 import os
+import cloudinary
+
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -29,17 +30,23 @@ environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
 
+
+# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env("PROJECT_SECRET_KEY")
 
+
+
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env.bool("DEBUG")
+DEBUG = env.bool("DEBUG", default=False)
+
 
 if DEBUG:
     STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
 else:
     STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+
 
 ALLOWED_HOSTS = [
     "cloudsync-6aiv.onrender.com",
@@ -65,6 +72,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
     'cloudsync',
+    'storages',
     'accounts',
     'storageapp',
     'subscriptions',
@@ -80,6 +88,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
+    "storageapp.middleware.UserTimezoneMiddleware",
 ]
 
 ROOT_URLCONF = 'vtscloudsync.urls'
@@ -117,8 +126,10 @@ WSGI_APPLICATION = 'vtscloudsync.wsgi.application'
 #     }
 # }
 
-import dj_database_url
 
+
+
+import dj_database_url
 DATABASES = {
     'default': dj_database_url.config(
         default=env("DATABASE_URL"),
@@ -165,13 +176,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
-
-USE_TZ = True
 TIME_ZONE = 'UTC'
-
-USE_I18N = True
-
 USE_TZ = True
+USE_I18N = True
 
 
 # Static files (CSS, JavaScript, Images)
@@ -184,6 +191,9 @@ STATICFILES_DIRS = [
 ]
 
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+
+
 
 AUTH_USER_MODEL = 'accounts.User'
 
@@ -199,8 +209,7 @@ SOCIALACCOUNT_AUTO_SIGNUP = True
 
 ACCOUNT_LOGOUT_ON_GET = True
 
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = True
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']
 ACCOUNT_EMAIL_VERIFICATION = "none"
 ACCOUNT_SIGNUP_FORM_CLASS = None
 
@@ -224,30 +233,60 @@ SOCIALACCOUNT_PROVIDERS = {
 }
 
 
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+    }
+}
+
+
+
 STORAGES = {
     "default": {
-        "BACKEND": "storageapp.storage.CloudinaryAutoStorage",
+        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
     },
     "staticfiles": {
         "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
     },
 }
 
+AWS_ACCESS_KEY_ID =  env("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY")
+AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME")
+AWS_S3_REGION_NAME = env("AWS_S3_REGION_NAME")
+AWS_S3_SIGNATURE_VERSION = env("AWS_S3_SIGNATURE_VERSION")
 
-CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': env("CLOUD_NAME"),
-    'API_KEY': env("CLOUD_API_KEY"),
-    'API_SECRET': env("CLOUD_API_SECRET")
-}
+AWS_S3_FILE_OVERWRITE = False
+AWS_DEFAULT_ACL = None
+AWS_QUERYSTRING_AUTH = False
 
 
 
-cloudinary.config(
-    cloud_name= env("CLOUD_NAME"),
-    api_key=env("CLOUD_API_KEY"),
-    api_secret= env("CLOUD_API_SECRET"),
-    secure=True
-)
+
+# STORAGES = {
+#     "default": {
+#         "BACKEND": "storageapp.storage.CloudinaryAutoStorage",
+#     },
+#     "staticfiles": {
+#         "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+#     },
+# }
+
+
+# CLOUDINARY_STORAGE = {
+#     'CLOUD_NAME': env("CLOUD_NAME"),
+#     'API_KEY': env("CLOUD_API_KEY"),
+#     'API_SECRET': env("CLOUD_API_SECRET")
+# }
+
+
+
+# cloudinary.config(
+#     cloud_name= env("CLOUD_NAME"),
+#     api_key=env("CLOUD_API_KEY"),
+#     api_secret= env("CLOUD_API_SECRET"),
+#     secure=True
+# )
 
 MEDIA_URL = '/media/'
 
@@ -267,7 +306,6 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 
-FILE_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024 * 1024
 DATA_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024 * 1024
 
 

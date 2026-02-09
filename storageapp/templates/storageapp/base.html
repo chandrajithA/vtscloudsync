@@ -41,7 +41,9 @@
 
     <div class="header-right">
         <div class="notification"><img src="{% static 'images/bell.png' %}" alt="" srcset=""><span>0</span></div>
-        <div class="user-pill">{{ request.user.first_name|default:request.user.username }}</div>
+        <div class="user-pill" onclick="window.location.href='{% url 'storageapp:settings_page' %}'" style="cursor:pointer;">
+            {{ request.user.first_name|default:request.user.username }}
+        </div>
     </div>
 </div>
 
@@ -52,7 +54,7 @@
     <a href="{% url 'storageapp:myfiles' %}" class="nav-item {% if request.resolver_match.url_name == 'myfiles' %}active{% endif %}"><img src="{% static 'images/myfile.png' %}" alt=""> My Files</a>
     <a href="{% url 'storageapp:shared_files' %}" class="nav-item {% if request.resolver_match.url_name == 'shared_files' %}active{% endif %}"><img src="{% static 'images/share.png' %}" alt=""> Shared</a>
     <a href="{% url 'storageapp:trash' %}" class="nav-item {% if request.resolver_match.url_name == 'trash' %}active{% endif %}"><img src="{% static 'images/trash.png' %}" alt=""> Trash</a>
-    <a href="{% url 'storageapp:settings_page' %}" class="nav-item {% if request.resolver_match.url_name == 'settings' %}active{% endif %}"><img src="{% static 'images/settings.png' %}" alt=""> Settings</a>
+    <a href="{% url 'storageapp:settings_page' %}" class="nav-item {% if request.resolver_match.url_name == 'settings_page' %}active{% endif %}"><img src="{% static 'images/settings.png' %}" alt=""> Settings</a>
     <a href="{% url 'accounts:user_logout' %}" class="nav-item"><img src="{% static 'images/logout.png' %}" alt=""> Logout</a>
 
     <div class="storage-box">
@@ -73,7 +75,7 @@
         </p>
 
         {% if current_plan.name != "Business" %}
-            <a href="{% url 'subscriptions:upgrade_page' %}" class="upgrade-btn">
+            <a href="{% url 'subscriptions:upgrade_page' %}" class="upgrade-btn" style="{% if request.resolver_match.url_name == 'upgrade_page' %}visibility: hidden;{% endif %}">
                 Upgrade
             </a>
         {% endif %}

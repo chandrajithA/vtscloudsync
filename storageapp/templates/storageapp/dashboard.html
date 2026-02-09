@@ -1,6 +1,7 @@
 {% extends 'storageapp/base.html' %}
 {% load static %}
 {% load humanize %}
+{% load tz %}
 
 {% block title %}Dashboard - Cloudsync{% endblock %}
 
@@ -9,6 +10,17 @@
 {% endblock %}
 
 {% block content %}
+
+{% if messages %}
+<div class="toast-container">
+    {% for message in messages %}
+    <div class="toast {{ message.tags }}">
+        <span>{{ message }}</span>
+        <button onclick="closeToast(this)">×</button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
 
 <h2 class="dashboard-title">Dashboard</h2>
 <p class="dashboard-subtitle">
@@ -89,14 +101,21 @@
 
         <div class="recent-info">
             <h5>{{ file.file_name }}</h5>
+            <p style="margin-bottom:5px;font-size:13px;">
+                {{ file.uploaded_at|localtime|date:"d M y, h:i A" }}
+            </p>
             <p>
                 {{ file.file_type|capfirst }} • {{ file.file_size|filesizeformat }}
             </p>
+            
             <small>{{ file.uploaded_at|naturaltime }}</small>
         </div>
 
         <div class="recent-actions">
-            {% if file.file_type|lower != "other" %}
+
+            {% comment %} cloudinary part {% endcomment %}
+            
+            {% comment %} {% if file.file_type|lower != "other" %}
             <a href="{{ file.file_url }}" target="_blank" class="icon-btn">
                 <img src="{% static 'images/hidepassword_icon.png' %}" alt="">
             </a>
@@ -105,6 +124,21 @@
             
             <a href="{% url 'storageapp:download_file' file.id %}"
             class="icon-btn download"
+            title="Download">
+                <img src="{% static 'images/download.png' %}" alt="">
+            </a> {% endcomment %}
+
+            {% comment %} cloudinary part {% endcomment %}
+
+            {% if file.file_type|lower != "other" %}
+            <a href="{% url 'storageapp:view_file' file.id %}" target="_blank" class="icon-btn">
+                <img src="{% static 'images/hidepassword_icon.png' %}" alt="">
+            </a>
+            {% endif %}
+
+            <a href="{% url 'storageapp:download_file' file.id %}"
+            class="icon-btn download"
+            target="_blank"
             title="Download">
                 <img src="{% static 'images/download.png' %}" alt="">
             </a>
@@ -292,6 +326,7 @@ function closeShareModal() {
 function copyLink() {
     navigator.clipboard.writeText(currentShareUrl);
     alert("Link copied to clipboard");
+    closeShareModal();
 }
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -332,6 +367,38 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
 });
+
+function closeToast(btn) {
+    const toast = btn.parentElement;
+    toast.style.opacity = "0";
+    toast.style.transform = "translateX(60px)";
+    setTimeout(() => toast.remove(), 300);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    const toasts = document.querySelectorAll(".toast");
+
+    toasts.forEach((toast, index) => {
+        setTimeout(() => {
+            toast.style.opacity = "0";
+            toast.style.transform = "translateX(60px)";
+            setTimeout(() => toast.remove(), 300);
+        }, 5000 + index * 300);
+    });
+});
+
+(function() {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+    fetch("{% url 'storageapp:set_timezone' %}", {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": "{{ csrf_token }}",
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: "timezone=" + encodeURIComponent(tz)
+    });
+})();
 
 </script>
 {% endblock %}

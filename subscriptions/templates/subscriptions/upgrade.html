@@ -23,6 +23,10 @@
             <span class="badge">Most Popular</span>
             {% endif %}
 
+            {% if plan.name == 'Business' %}
+            <span class="badge">Advance</span>
+            {% endif %}
+
             <h3>{{ plan.name }}</h3>
 
             <p class="storage">
@@ -42,7 +46,7 @@
             </ul>
 
             <button
-                class="upgrade-btn"
+                class="upgrade-button"
                 onclick="upgradePlan({{ plan.id }})">
                 Upgrade
             </button>

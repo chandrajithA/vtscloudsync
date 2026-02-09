@@ -24,9 +24,7 @@
     {% endif %}
 
     <div class="settings-card">
-
         
-
         <h3>Change Username</h3>
 
         <div class="form-grid">
@@ -52,8 +50,11 @@
             <!-- Avatar row -->
             <div class="avatar-row">
                 <div class="avatar" id="avatarPreview">
-                    {% if request.user.profile_picture %}
+                    {% comment %} {% if request.user.profile_picture %}
                         <img src="{{ request.user.profile_picture.url }}" id="avatarImg">
+                    {% else %} {% endcomment %}
+                    {% if profile_image_url %}
+                        <img src="{{ profile_image_url }}" id="avatarImg">
                     {% else %}
                         <span id="avatarText">
                             {{ request.user.first_name|slice:":1"|upper }}
@@ -100,8 +101,8 @@
 
             <!-- Buttons -->
             <div class="form-actions">
-                <button type="submit" class="save-btn">Save Changes</button>
-                <a href="{% url 'storageapp:dashboard' %}" class="cancel-btn">Cancel</a>
+                <button type="submit" class="save-btn" id="saveProfileBtn" disabled>Save Changes</button>
+                <a href="{% url 'storageapp:settings_page' %}" class="cancel-btn">Cancel</a>
             </div>
 
         </form>
@@ -270,6 +271,58 @@ function updateUsername() {
         if (data.success) location.reload();
     });
 }
+
+
+// ===============================
+// Enable Save button on changes
+// ===============================
+const saveBtn = document.getElementById("saveProfileBtn");
+
+const profileFields = {
+    first_name: document.querySelector('input[name="first_name"]'),
+    last_name: document.querySelector('input[name="last_name"]'),
+    email: document.querySelector('input[name="email"]'),
+    phone: document.querySelector('input[name="phone"]'),
+};
+
+const profileFileInput = document.getElementById("profileInput");
+
+// Store original values
+const originalValues = {
+    first_name: profileFields.first_name?.value,
+    last_name: profileFields.last_name?.value,
+    email: profileFields.email?.value,
+    phone: profileFields.phone?.value,
+};
+
+function checkProfileChanges() {
+    let changed = false;
+
+    // Check text fields
+    for (let key in profileFields) {
+        if (profileFields[key] && profileFields[key].value !== originalValues[key]) {
+            changed = true;
+            break;
+        }
+    }
+
+    // Check profile picture
+    if (profileFileInput && profileFileInput.files.length > 0) {
+        changed = true;
+    }
+
+    // Enable/disable button
+    if (saveBtn) {
+        saveBtn.disabled = !changed;
+    }
+}
+
+// Attach listeners
+for (let key in profileFields) {
+    profileFields[key]?.addEventListener("input", checkProfileChanges);
+}
+
+profileFileInput?.addEventListener("change", checkProfileChanges);
 
 </script>
 

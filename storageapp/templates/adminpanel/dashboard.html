@@ -10,6 +10,17 @@
 
 {% block content %}
 
+{% if messages %}
+<div class="toast-container">
+    {% for message in messages %}
+    <div class="toast {{ message.tags }}">
+        <span>{{ message }}</span>
+        <button onclick="closeToast(this)">×</button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
 <h2 class="dashboard-title">Admin Dashboard Overview</h2>
 <p class="dashboard-subtitle">
     Monitor your cloud storage platform performance
@@ -206,6 +217,26 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
 });
+
+function closeToast(btn) {
+    const toast = btn.parentElement;
+    toast.style.opacity = "0";
+    toast.style.transform = "translateX(60px)";
+    setTimeout(() => toast.remove(), 300);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    const toasts = document.querySelectorAll(".toast");
+
+    toasts.forEach((toast, index) => {
+        setTimeout(() => {
+            toast.style.opacity = "0";
+            toast.style.transform = "translateX(60px)";
+            setTimeout(() => toast.remove(), 300);
+        }, 5000 + index * 300);
+    });
+});
+
 </script>
 
 

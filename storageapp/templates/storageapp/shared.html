@@ -1,6 +1,7 @@
 {% extends base_template %}
 {% load static %}
 {% load humanize %}
+{% load tz %}
 
 {% block title %}Shared - Cloudsync{% endblock %}
 
@@ -9,6 +10,17 @@
 {% endblock %}
 
 {% block content %}
+
+{% if messages %}
+<div class="toast-container">
+    {% for message in messages %}
+    <div class="toast {{ message.tags }}">
+        <span>{{ message }}</span>
+        <button onclick="closeToast(this)">×</button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
 
 <div class="shared-wrapper">
 
@@ -66,7 +78,15 @@
         {% for s in shared_with_me %}
         <div class="shared-row" data-type="with-me">
             <div class="shared-file">
-                <img src="{% static 'images/file.png' %}">
+                {% if s.file.file_type == "image" %}
+                    <img src="{% static 'images/image.png' %}">
+                {% elif s.file.file_type == "video" %}
+                    <img src="{% static 'images/video.png' %}">
+                {% elif s.file.file_type == "document" %}
+                    <img src="{% static 'images/adobe.png' %}">
+                {% else %}
+                    <img src="{% static 'images/file.png' %}">
+                {% endif %}
                 <div>
                     <div class="shared-file-name">{{ s.file.file_name }}</div>
                     <div class="shared-file-meta">
@@ -81,23 +101,36 @@
 
             
             <div class="recent-actions">
-                {% if file.file_type == "other" %}
+                {% comment %} {% if s.file.file_type == "other" %}
                 <a href="{{ s.file.file_url }}" target="_blank" title="View" class="icon-btn">
                     <img src="{% static 'images/hidepassword_icon.png' %}">
                 </a>
-                {% endif %}
-
-                <a href="javascript:void(0)"
-                    title="Share"
-                    class="icon-btn"
-                    onclick="openShareModal('{{ file.file_url }}')">
-                        <img src="{% static 'images/shareicon.png' %}" alt="Share">
-                </a>
-                
+                {% endif %}    
 
 
                 <a href="{% url 'storageapp:download_file' s.file.id %}" class="icon-btn">
                     <img src="{% static 'images/download.png' %}">
+                </a> {% endcomment %}
+
+                {% if s.file.file_type|lower != "other" %}
+                <a href="{% url 'storageapp:view_file' s.file.id %}" target="_blank" class="icon-btn">
+                    <img src="{% static 'images/hidepassword_icon.png' %}" alt="">
+                </a>
+                {% endif %}
+
+                <a href="{% url 'storageapp:download_file' s.file.id %}"
+                class="icon-btn download"
+                target="_blank"
+                title="Download">
+                    <img src="{% static 'images/download.png' %}" alt="">
+                </a>
+
+
+                <a href="javascript:void(0)"
+                    title="Share"
+                    class="icon-btn"
+                    onclick="openShareModal('{{ s.file.file_url }}')">
+                        <img src="{% static 'images/shareicon.png' %}" alt="Share">
                 </a>
 
 
@@ -114,7 +147,15 @@
         {% for s in shared_by_me %}
         <div class="shared-row" data-type="by-me">
             <div class="shared-file">
-                <img src="{% static 'images/file.png' %}">
+                {% if s.file.file_type == "image" %}
+                    <img src="{% static 'images/image.png' %}">
+                {% elif s.file.file_type == "video" %}
+                    <img src="{% static 'images/video.png' %}">
+                {% elif s.file.file_type == "document" %}
+                    <img src="{% static 'images/adobe.png' %}">
+                {% else %}
+                    <img src="{% static 'images/file.png' %}">
+                {% endif %}
                 <div>
                     <div class="shared-file-name">{{ s.file.file_name }}</div>
                     <div class="shared-file-meta">
@@ -125,27 +166,41 @@
 
             <span>Me</span>
             <span>{{ s.shared_with.username }}</span>
-            <span>{{ s.shared_at|date:"M d" }}</span>
+            <span>{{ s.shared_at|localtime|date:"d M y, h:i A" }}</span>
+            
 
             <div class="recent-actions">
-                {% if file.file_type == "other" %}
+                {% comment %} {% if s.file.file_type == "other" %}
                 <a href="{{ s.file.file_url }}" target="_blank" title="View" class="icon-btn">
                     <img src="{% static 'images/hidepassword_icon.png' %}">
                 </a>
                 {% endif %}
 
+                <a href="{% url 'storageapp:download_file' s.file.id %}" class="icon-btn">
+                    <img src="{% static 'images/download.png' %}">
+                </a> {% endcomment %}
+
+
+                {% if s.file.file_type|lower != "other" %}
+                <a href="{% url 'storageapp:view_file' s.file.id %}" target="_blank" class="icon-btn">
+                    <img src="{% static 'images/hidepassword_icon.png' %}" alt="">
+                </a>
+                {% endif %}
+
+                <a href="{% url 'storageapp:download_file' s.file.id %}"
+                class="icon-btn download"
+                target="_blank"
+                title="Download">
+                    <img src="{% static 'images/download.png' %}" alt="">
+                </a>
+
                 <a href="javascript:void(0)"
                     title="Share"
                     class="icon-btn"
-                    onclick="openShareModal('{{ file.file_url }}')">
+                    onclick="openShareModal('{{ s.file.file_url }}')">
                         <img src="{% static 'images/shareicon.png' %}" alt="Share">
                 </a>
                 
-
-
-                <a href="{% url 'storageapp:download_file' s.file.id %}" class="icon-btn">
-                    <img src="{% static 'images/download.png' %}">
-                </a>
 
 
                 <!-- DELETE -->
@@ -286,6 +341,7 @@ function closeShareModal() {
 function copyLink() {
     navigator.clipboard.writeText(currentShareUrl);
     alert("Link copied to clipboard");
+    closeShareModal();
 }
 
 
@@ -375,6 +431,39 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 });
+
+function closeToast(btn) {
+    const toast = btn.parentElement;
+    toast.style.opacity = "0";
+    toast.style.transform = "translateX(60px)";
+    setTimeout(() => toast.remove(), 300);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    const toasts = document.querySelectorAll(".toast");
+
+    toasts.forEach((toast, index) => {
+        setTimeout(() => {
+            toast.style.opacity = "0";
+            toast.style.transform = "translateX(60px)";
+            setTimeout(() => toast.remove(), 300);
+        }, 5000 + index * 300);
+    });
+});
+
+
+(function() {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+    fetch("{% url 'storageapp:set_timezone' %}", {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": "{{ csrf_token }}",
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: "timezone=" + encodeURIComponent(tz)
+    });
+})();
 
 </script>
 {% endblock %}

@@ -17,12 +17,14 @@ urlpatterns = [
     path("file/<int:file_id>/trash/", move_to_trash, name="move_to_trash"), 
     path("file/<int:file_id>/share/", share_file_api, name="share_file"),
     path("file/<int:file_id>/download/", download_file, name="download_file"),
+    path("file/<int:file_id>/view/", view_file, name="view_file"),
     
     path("shared/<int:shared_id>/remove/", remove_shared_file, name="remove_shared_file"),
     path("shared/<int:shared_id>/remove_own/", remove_shared_own_file, name="remove_shared_own_file"),
 
     path("check-username/", check_username, name="check_username"),
     path("update-username/", update_username, name="update_username"),
+    path("set-timezone/", set_timezone, name="set_timezone"),
     
     path("trash/restore/<int:file_id>/", restore_file, name="restore_file"),
     path("trash/delete/<int:file_id>/", delete_file, name="delete_file"),

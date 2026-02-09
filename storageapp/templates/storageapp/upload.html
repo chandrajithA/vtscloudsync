@@ -8,6 +8,18 @@
 {% endblock %}
 
 {% block content %}
+
+{% if messages %}
+<div class="toast-container">
+    {% for message in messages %}
+    <div class="toast {{ message.tags }}">
+        <span>{{ message }}</span>
+        <button onclick="closeToast(this)">×</button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
 <h2 class="page-title">Upload Files</h2>
 <p class="page-subtitle">Drag and drop your files or browse to upload</p>
 
@@ -274,6 +286,26 @@ function uploadSingleFile(file) {
     });
     
 }
+
+
+function closeToast(btn) {
+    const toast = btn.parentElement;
+    toast.style.opacity = "0";
+    toast.style.transform = "translateX(60px)";
+    setTimeout(() => toast.remove(), 300);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    const toasts = document.querySelectorAll(".toast");
+
+    toasts.forEach((toast, index) => {
+        setTimeout(() => {
+            toast.style.opacity = "0";
+            toast.style.transform = "translateX(60px)";
+            setTimeout(() => toast.remove(), 300);
+        }, 5000 + index * 300);
+    });
+});
 
 function formatFileSize(bytes) {
     if (!bytes || bytes === 0) return "0 Bytes";

@@ -5,13 +5,14 @@
 
 .settings-subtitle {
     color: #777;
-    margin-bottom: 20px;
+
+    margin: 10px 0px;
 }
 
 .settings-card {
     background: #fff;
     border-radius: 14px;
-    padding: 28px;
+    padding: 20px 15px;
     max-width: 800px;
 }
 
@@ -103,6 +104,7 @@
     border-radius: 30px;
     border: none;
     cursor: pointer;
+    margin-bottom: 15px;
 }
 
 .cancel-btn {
@@ -111,6 +113,7 @@
     border-radius: 30px;
     text-decoration: none;
     color: #742BFA;
+    margin-bottom: 15px;
 }
 
 .upload-btn input {
@@ -121,7 +124,6 @@
     background-color: #9ca3af;   /* grey */
     cursor: not-allowed;
     opacity: 0.7;
-    margin-bottom: 20px;
 }
 
 
