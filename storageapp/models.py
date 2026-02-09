@@ -85,7 +85,7 @@ class UploadHistory(models.Model):
     # 🔹 File metadata (snapshot)
     file_name = models.CharField(max_length=255)
     file_size = models.BigIntegerField()
-    file_type = models.CharField(max_length=20)
+    file_type = models.CharField(max_length=20, null=True, blank=True)
     mime_type = models.CharField(max_length=100, null=True, blank=True)
 
     # 🔹 Result

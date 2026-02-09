@@ -119,6 +119,8 @@ WSGI_APPLICATION = 'vtscloudsync.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+
+
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.sqlite3',
@@ -305,7 +307,6 @@ LOGOUT_REDIRECT_URL = '/accounts/SignIn/'
 
 RAZORPAY_KEY_ID = env("RAZORPAY_KEY_ID")
 RAZORPAY_KEY_SECRET = env("RAZORPAY_KEY_SECRET")
-RAZORPAY_REFUND_WEBHOOK_SECRET = env("RAZORPAY_REFUND_WEBHOOK_SECRET")
 
 
 CSRF_TRUSTED_ORIGINS = [
