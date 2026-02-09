@@ -56,8 +56,6 @@ class UserLoginActivityAdmin(admin.ModelAdmin):
 
     ordering = ("-login_at",)
 
-    date_hierarchy = "login_at"
-
     readonly_fields = (
         "user",
         "login_at",
