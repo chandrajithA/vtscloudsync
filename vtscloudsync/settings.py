@@ -130,6 +130,7 @@ WSGI_APPLICATION = 'vtscloudsync.wsgi.application'
 
 
 import dj_database_url
+
 DATABASES = {
     'default': dj_database_url.config(
         default=env("DATABASE_URL"),
@@ -304,6 +305,7 @@ RAZORPAY_REFUND_WEBHOOK_SECRET = env("RAZORPAY_REFUND_WEBHOOK_SECRET")
 CSRF_TRUSTED_ORIGINS = [
     "https://cloudsync-6aiv.onrender.com",
 ]
+
 
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024 * 1024
