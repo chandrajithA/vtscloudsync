@@ -8,6 +8,9 @@ class PlanAdmin(admin.ModelAdmin):
     ordering = ("price",)
 
     def formatted_storage(self, obj):
+        if obj.storage_limit is None:
+            return "Unlimited"
+        
         size = obj.storage_limit
         for unit in ["B", "KB", "MB", "GB", "TB"]:
             if size < 1024:
@@ -16,6 +19,7 @@ class PlanAdmin(admin.ModelAdmin):
         return f"{size:.2f} PB"
 
     formatted_storage.short_description = "Storage Limit"
+    formatted_storage.admin_order_field = "storage_limit"
 
     def formatted_file_size(self, obj):
         if obj.file_size_lmt is None:
@@ -29,6 +33,7 @@ class PlanAdmin(admin.ModelAdmin):
         return f"{filesizelimit:.2f} PB"
 
     formatted_file_size.short_description = "File size Limit"
+    formatted_file_size.admin_order_field = "file_size_limit"
 
     
 

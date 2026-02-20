@@ -2,6 +2,7 @@ from django.db import models
 from django.conf import settings
 from datetime import timedelta
 from django.utils import timezone
+from accounts.models import Organization
 
 class CloudFile(models.Model):
     FILE_TYPES = (
@@ -10,8 +11,14 @@ class CloudFile(models.Model):
         ("document", "Document"),
         ("other", "Other"),
     )
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.PROTECT,
+        related_name="files",
+        null=True,
+    )
 
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
     file_name = models.CharField(max_length=255)
     file_size = models.BigIntegerField()
     file_type = models.CharField(max_length=20, choices=FILE_TYPES)
@@ -37,17 +44,17 @@ User = settings.AUTH_USER_MODEL
 class SharedFile(models.Model):
     file = models.ForeignKey(
         "CloudFile",
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name="shared_entries"
     )
     owner = models.ForeignKey(
         User,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name="shared_by_me"
     )
     shared_with = models.ForeignKey(
         User,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name="shared_with_me"
     )
     shared_at = models.DateTimeField(auto_now_add=True)
@@ -61,11 +68,22 @@ class SharedFile(models.Model):
 
 
 
-class UploadHistory(models.Model):
+class FileHistory(models.Model):
+    ACTION_CHOICES = (
+        ("upload", "Upload"),
+        ("access", "Access"),
+        ("trash", "Trash"),
+        ("restore", "Restore"),
+        ("delete", "Delete"),
+        ("view", "View"),
+        ("download", "Download"),
+        ("share", "Share"),
+    )
     STATUS_CHOICES = (
         ("success", "Success"),
         ("failed", "Failed"),
         ("cancelled", "Cancelled"),
+        ("denied", "Denied")
     )
 
     FAILURE_REASON_CHOICES = (
@@ -74,12 +92,21 @@ class UploadHistory(models.Model):
         ("CLOUDINARY_LIMIT", "Cloudinary limit"),
         ("CANCELLED", "Cancelled"),
         ("UNKNOWN", "Unknown error"),
+        ("PLAN_ERROR", "Plan error"),
+        ("Permission_NOT_GIVEN", "Permission not given")
     )
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name="upload_history"
+        on_delete=models.PROTECT,
+        related_name="upload_user"
+    )
+
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.PROTECT,
+        related_name="uploadfiles",
+        null=True,
     )
 
     # 🔹 File metadata (snapshot)
@@ -89,6 +116,7 @@ class UploadHistory(models.Model):
     mime_type = models.CharField(max_length=100, null=True, blank=True)
 
     # 🔹 Result
+    action = models.CharField(max_length=15, choices=ACTION_CHOICES)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES)
     failure_reason = models.CharField(
         max_length=50,
@@ -97,6 +125,7 @@ class UploadHistory(models.Model):
         blank=True
     )
     failure_message = models.TextField(null=True, blank=True)
+    failure_comment = models.TextField(null=True, blank=True)
 
     # 🔹 Cloudinary info (only if success)
     file_url = models.URLField(max_length=1000, null=True, blank=True)

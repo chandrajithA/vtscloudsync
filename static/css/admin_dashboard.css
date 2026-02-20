@@ -137,6 +137,11 @@
    PLAN DISTRIBUTION
 ================================ */
 
+.recent-activity-area{
+    max-height: 300px;
+    overflow-y: scroll;
+}
+
 .admin-card ul {
     list-style: none;
     padding: 0;

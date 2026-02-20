@@ -21,7 +21,7 @@ def upgrade_page(request):
         if current_plan.name.lower() == "free":
             plans = Plan.objects.exclude(name__iexact="free")
         elif current_plan.name.lower() == "pro":
-            plans = Plan.objects.filter(name__iexact="business")
+            plans = Plan.objects.filter(name__iexact="ultra")
         else:
             plans = Plan.objects.none()
 

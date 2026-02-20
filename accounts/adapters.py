@@ -81,8 +81,6 @@ class MySocialAccountAdapter(DefaultSocialAccountAdapter):
                     request,
                     "Free plan not configured. Please contact admin."
                 )
-                user.delete()
-                return redirect('accounts:signup_page')
 
         # 🔗 LINK social account to user
         sociallogin.connect(request, user)

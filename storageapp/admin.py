@@ -9,6 +9,7 @@ class CloudFileAdmin(admin.ModelAdmin):
         "file_name",
         "file_type",
         "user",
+        "organization",
         "formatted_size",
         "is_deleted",
         "uploaded_at",
@@ -90,17 +91,18 @@ class SharedFileAdmin(admin.ModelAdmin):
 
 
 from django.contrib import admin
-from .models import UploadHistory
+from .models import FileHistory
 
 
-@admin.register(UploadHistory)
-class UploadHistoryAdmin(admin.ModelAdmin):
+@admin.register(FileHistory)
+class FileHistoryAdmin(admin.ModelAdmin):
     # 🔹 Columns shown in list view
     list_display = (
         "file_name",
         "user",
+        "organization",
+        "action",
         "status",
-        "failure_reason",
         "file_size_display",
         "file_type",
         "created_at",
@@ -130,13 +132,16 @@ class UploadHistoryAdmin(admin.ModelAdmin):
     # 🔹 Read-only fields (logs should not be edited)
     readonly_fields = (
         "user",
+        "organization",
         "file_name",
         "file_size",
         "file_type",
         "mime_type",
+        "action",
         "status",
         "failure_reason",
         "failure_message",
+        "failure_comment",
         "file_url",
         "public_id",
         "created_at",

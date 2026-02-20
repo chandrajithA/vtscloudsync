@@ -78,15 +78,17 @@
     <!-- RECENT ACTIVITY -->
     <div class="admin-card">
         <h4>Recent Activity</h4>
-        <ul class="activity-list">
-            {% for file in recent_activity %}
-                <li>
-                    <strong>{{ file.user.username }}</strong>
-                    uploaded {{ file.file_name }}
-                    <small>{{ file.uploaded_at|naturaltime }}</small>
-                </li>
-            {% endfor %}
-        </ul>
+        <div class="recent-activity-area">
+            <ul class="activity-list">
+                {% for file in recent_activity %}
+                    <li>
+                        <strong>{{ file.user.username }}</strong>
+                        uploaded {{ file.file_name }}
+                        <small>{{ file.uploaded_at|naturaltime }}</small>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
     </div>
 
 </div>

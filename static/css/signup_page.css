@@ -10,7 +10,7 @@
 .auth-left {
     padding: clamp(20px, 5vw, 60px);
     display: grid;
-    grid-template-rows: auto 1fr;
+    grid-auto-rows: max-content;
 }
 
 .logoarea{
@@ -47,8 +47,8 @@
 /* Signin card */
 .signin-box {
     max-width: 420px;
-    align-self: center;
-    margin: auto;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 /* Headings */
@@ -155,12 +155,7 @@
 }
 
 /* ================= RIGHT ================= */
-.auth-right {
-    background-image: url("/static/images/cloud_login.png");
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: cover;   /* 🔥 THIS IS KEY */
-}
+
 
 .auth-right img{
     height: 100%;
@@ -182,7 +177,9 @@
     }
 
     .auth-left {
-        place-items: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
     }
 
     .signin-box {

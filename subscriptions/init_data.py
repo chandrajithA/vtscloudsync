@@ -20,7 +20,7 @@ def run():
     )
 
     Plan.objects.get_or_create(
-        name="Business",
+        name="Ultra",
         defaults={"price": 4999, "storage_limit": 107374182400},
     )
 

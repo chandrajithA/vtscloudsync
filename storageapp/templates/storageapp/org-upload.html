@@ -1,10 +1,10 @@
 {% extends base_template %}
 {% load static %}
 
-{% block title %}Upload - Cloudsync{% endblock %}
+{% block title %}{% if request.user.org_membership %}{{request.user.org_membership.organization.name}} Upload - Cloudsync{% endif %}{% endblock %}
 
 {% block style %}
-    <link rel="stylesheet" href="{% static 'css/upload.css' %}">
+    <link rel="stylesheet" href="{% static 'css/org-upload.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -20,7 +20,7 @@
 </div>
 {% endif %}
 
-<h2 class="page-title">Upload Files</h2>
+<h2 class="page-title">{% if request.user.org_membership %}Upload Files - {{request.user.org_membership.organization.name}}{% endif %}</h2>
 <p class="page-subtitle">Drag and drop your files or browse to upload</p>
 
 <div class="upload-box" id="dropZone">
@@ -227,7 +227,7 @@ function uploadSingleFile(file) {
         formData.append("file", file);
 
         const xhr = new XMLHttpRequest();
-        xhr.open("POST", "{% url 'storageapp:upload_page' %}");
+        xhr.open("POST", "{% url 'storageapp:org_upload_page' %}");
         xhr.setRequestHeader("X-CSRFToken", csrfToken);
 
         xhr.upload.onprogress = (e) => {
@@ -238,12 +238,7 @@ function uploadSingleFile(file) {
         };
 
         xhr.onload = () => {
-            let res = {};
-            try {
-                res = JSON.parse(xhr.responseText || "{}");
-            } catch (e) {}
-
-            // ✅ SUCCESS (200)
+            const res = JSON.parse(xhr.responseText || "{}");
             if (xhr.status === 200 && res.success) {
 
                 const rejected = res.rejected_files?.[0];
@@ -276,7 +271,13 @@ function uploadSingleFile(file) {
                 }        
                 
             } 
-            
+            else {
+                row.classList.add("error");
+                status.innerHTML = "Failed";
+                bar.style.background = "#ef4444";
+                cancelBtn.style.display = "none";
+                row.querySelector(".file-icon-img").src = "{% static 'images/close.png' %}";
+            }
             resolve();
         };
 

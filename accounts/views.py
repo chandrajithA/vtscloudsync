@@ -220,8 +220,6 @@ def signup_page(request):
                     request,
                     "Free plan not configured. Please contact admin."
                 )
-                user.delete()
-                return redirect('accounts:signup_page')
 
             # 3️⃣ Login user
             login(request, user, 'django.contrib.auth.backends.ModelBackend')

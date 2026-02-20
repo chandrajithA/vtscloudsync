@@ -48,11 +48,8 @@ else:
 
 
 
-ALLOWED_HOSTS = [
-    "cloudsync-6aiv.onrender.com",
-    "localhost",
-    "127.0.0.1",
-]
+
+ALLOWED_HOSTS = env("ALLOWED_HOSTS").split(",")
 
 
 

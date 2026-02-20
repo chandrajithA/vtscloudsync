@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 
 class Plan(models.Model):
     name = models.CharField(max_length=50)
@@ -8,16 +9,14 @@ class Plan(models.Model):
 
     def __str__(self):
         return self.name
-
-
-from django.conf import settings
+       
 
 class UserSubscription(models.Model):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE
+        on_delete=models.PROTECT
     )
-    plan = models.ForeignKey(Plan, on_delete=models.SET_NULL, null=True)
+    plan = models.ForeignKey(Plan, on_delete=models.PROTECT, null=True)
     started_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -25,8 +24,8 @@ class UserSubscription(models.Model):
 
 
 class Payment(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    plan = models.ForeignKey(Plan, on_delete=models.SET_NULL, null=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    plan = models.ForeignKey(Plan, on_delete=models.PROTECT, null=True)
 
     amount = models.DecimalField(max_digits=8, decimal_places=2)
     razorpay_order_id = models.CharField(max_length=100)
@@ -43,4 +42,3 @@ class Payment(models.Model):
 
     def __str__(self):
         return f"{self.user} - {self.plan} - {self.status}"
-

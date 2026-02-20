@@ -173,7 +173,29 @@
     }
 }
 
+@media (max-width: 420px) {
+.container {
+    margin: auto;
+    padding: 10px 5px;
 
+}
+
+.container .logoarea .logotext{
+    display: none;
+}
+.nav-links a {
+    margin: 0 4px;
+    
+}
+.hero {
+    padding: 60px 0px;
+}
+.login-btn {
+    padding: 5px 8px;
+    font-size: 14px;
+    
+}
+}
 
 /* ===== Sections ===== */
 .section {

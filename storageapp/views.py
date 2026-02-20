@@ -41,7 +41,7 @@ def dashboard(request):
         user = request.user
 
         # Exclude trashed files
-        files = CloudFile.objects.filter(user=user, is_deleted=False)
+        files = CloudFile.objects.filter(user=user, organization=None, is_deleted=False)
 
         # ---- STORAGE CARDS ----
         stats = {
@@ -90,9 +90,9 @@ def admin_dashboard(request):
         )
 
         recent_activity = (
-            CloudFile.objects
+            FileHistory.objects
             .select_related("user")
-            .order_by("-uploaded_at")[:5]
+            .order_by("-created_at")
         )
 
         return render(request, "adminpanel/dashboard.html", {
@@ -106,6 +106,10 @@ def admin_dashboard(request):
         return redirect('storageapp:dashboard')
     else:
         return redirect('accounts:signin_page')
+    
+
+def org_dashboard(request):
+    return
 
 
 
@@ -193,7 +197,7 @@ def admin_storage_growth_api(request):
             year -= 1
 
     # fetch files
-    files = CloudFile.objects.filter(is_deleted=False)
+    files = CloudFile.objects.filter()
 
     storage_map = {}
 
@@ -270,7 +274,7 @@ def admin_storage_growth_api(request):
 #                     status=403
 #                 )
 #             if file_size_limit and file.size > file_size_limit:
-#                 UploadHistory.objects.create(
+#                 FileHistory.objects.create(
 #                     user=request.user,
 #                     file_name=file.name,
 #                     file_size=file.size,
@@ -290,7 +294,7 @@ def admin_storage_growth_api(request):
             
 #             # 🚫 If this file does not fit, skip it
 #             if file.size > remaining_space:
-#                 UploadHistory.objects.create(
+#                 FileHistory.objects.create(
 #                     user=request.user,
 #                     file_name=file.name,
 #                     file_size=file.size,
@@ -344,7 +348,7 @@ def admin_storage_growth_api(request):
 #                         public_id = result["public_id"] 
 
 #                 except Exception:
-#                     UploadHistory.objects.create(
+#                     FileHistory.objects.create(
 #                         user=request.user,
 #                         file_name=file.name,
 #                         file_size=file.size,
@@ -391,7 +395,7 @@ def admin_storage_growth_api(request):
 
 #                 except Exception:
                     
-#                     UploadHistory.objects.create(
+#                     FileHistory.objects.create(
 #                         user=request.user,
 #                         file_name=file.name,
 #                         file_size=file.size,
@@ -438,7 +442,7 @@ def admin_storage_growth_api(request):
 #                         public_id = result["public_id"] 
                 
 #                 except Exception as e:
-#                     UploadHistory.objects.create(
+#                     FileHistory.objects.create(
 #                         user=request.user,
 #                         file_name=file.name,
 #                         file_size=file.size,
@@ -486,7 +490,7 @@ def admin_storage_growth_api(request):
 
 #                 except Exception as e:
                     
-#                     UploadHistory.objects.create(
+#                     FileHistory.objects.create(
 #                         user=request.user,
 #                         file_name=file.name,
 #                         file_size=file.size,
@@ -513,7 +517,7 @@ def admin_storage_growth_api(request):
 #                 public_id=public_id,
 #             )
 
-#             UploadHistory.objects.create(
+#             FileHistory.objects.create(
 #                 user=request.user,
 #                 file_name=file.name,
 #                 file_size=file.size,
@@ -548,16 +552,16 @@ def upload_page(request):
                 base_template = "storageapp/base.html"
 
             # 👇 IMPORTANT PART
-            last_uploads = (
-                CloudFile.objects
-                .filter(user=request.user, is_deleted=False)
-                .order_by("-uploaded_at")[:10]
+            recent_uploads = (
+                FileHistory.objects
+                .filter(user=request.user,organization=None)
+                .order_by("-created_at")[:10]
             )
 
             return render(
                 request,
                 "storageapp/upload.html",
-                {"last_uploads": last_uploads,
+                {"recent_uploads": recent_uploads,
                 "base_template": base_template},
             )
             
@@ -577,58 +581,109 @@ def upload_page(request):
                 )
 
             sub = UserSubscription.objects.select_related("plan").filter(user=request.user).first()
-            limit = sub.plan.storage_limit if sub and sub.plan else 0
-            file_size_limit = sub.plan.file_size_lmt if sub and sub.plan.file_size_lmt else None
+            if sub:
+                if sub.plan:
+                    limit = sub.plan.storage_limit
+                    file_size_limit = sub.plan.file_size_lmt
+                else:
+                    limit = 0
+                    file_size_limit = 0
+            else:
+                limit = 0
+                file_size_limit = 0
+            
 
-            remaining_space = limit - used
+            if limit is not None or file_size_limit is not None:
+                if limit == 0 or file_size_limit == 0:
+                    FileHistory.objects.create(
+                        user=request.user,
+                        organization=None,
+                        file_name=file.name,
+                        file_size=file.size,
+                        file_type="other",
+                        action="upload",
+                        status="failed",
+                        failure_reason="PLAN_ERROR",
+                        failure_message="Error in Plan configuration or storage. Contact admin.",
+                        ip_address=get_client_ip(request),
+                    )
+                    return JsonResponse({
+                        "success": True,
+                        "rejected_files": [{
+                            "name": file.name,
+                            "reason": "Error in Plan configuration or storage. Contact admin."
+                        }]
+                    })
+                
+                if limit is not None:
+                    remaining_space = limit - used
 
-            if remaining_space <= 0:
-                return JsonResponse(
-                    {"error": "Storage almost full. Upgrade your plan."},
-                    status=403
-                )
+                    if remaining_space <= 0:
+                        FileHistory.objects.create(
+                            user=request.user,
+                            organization=None,
+                            file_name=file.name,
+                            file_size=file.size,
+                            file_type="other",
+                            action="upload",
+                            status="failed",
+                            failure_reason="STORAGE_FULL",
+                            failure_message="Not enough storage. Upgrade plan.",
+                            ip_address=get_client_ip(request),
+                        )
+                        return JsonResponse({
+                            "success": True,
+                            "rejected_files": [{
+                                "name": file.name,
+                                "reason": "Storage almost full. Upgrade your plan."
+                            }]
+                        })
+                
+                
+                    # 🚫 If this file does not fit, skip it
+                    if file.size > remaining_space:
+                        FileHistory.objects.create(
+                            user=request.user,
+                            organization=None,
+                            file_name=file.name,
+                            file_size=file.size,
+                            file_type="other",
+                            action="upload",
+                            status="failed",
+                            failure_reason="STORAGE_FULL",
+                            failure_message="Not enough storage. Upgrade plan.",
+                            ip_address=get_client_ip(request),
+                        )
+                        return JsonResponse({
+                            "success": True,
+                            "rejected_files": [{
+                                "name": file.name,
+                                "reason": "Not enough storage. Upgrade plan."
+                            }]
+                        })
+                
+                if file_size_limit is not None:
             
-            if file_size_limit and file.size > file_size_limit:
-                UploadHistory.objects.create(
-                    user=request.user,
-                    file_name=file.name,
-                    file_size=file.size,
-                    file_type="other",
-                    status="failed",
-                    failure_reason="FILE_TOO_LARGE",
-                    failure_message=f"File Size Limit - {filesizeformat(file_size_limit)} for this plan",
-                    ip_address=get_client_ip(request),
-                )
-                return JsonResponse({
-                    "success": True,
-                    "rejected_files": [{
-                        "name": file.name,
-                        "reason": f"File Size Limit - {filesizeformat(file_size_limit)} for this plan"
-                    }]
-                })
-            
-            
-            # 🚫 If this file does not fit, skip it
-            if file.size > remaining_space:
-                UploadHistory.objects.create(
-                    user=request.user,
-                    file_name=file.name,
-                    file_size=file.size,
-                    file_type="other",
-                    status="failed",
-                    failure_reason="STORAGE_FULL",
-                    failure_message="Not enough storage. Upgrade plan.",
-                    ip_address=get_client_ip(request),
-                )
-                return JsonResponse({
-                    "success": True,
-                    "rejected_files": [{
-                        "name": file.name,
-                        "reason": "Not enough storage. Upgrade plan."
-                    }]
-                })
-
-            
+                    if file.size > file_size_limit:
+                        FileHistory.objects.create(
+                            user=request.user,
+                            organization=None,
+                            file_name=file.name,
+                            file_size=file.size,
+                            file_type="other",
+                            action="upload",
+                            status="failed",
+                            failure_reason="FILE_TOO_LARGE",
+                            failure_message=f"File Size Limit - {filesizeformat(file_size_limit)} for this plan",
+                            ip_address=get_client_ip(request),
+                        )
+                        return JsonResponse({
+                            "success": True,
+                            "rejected_files": [{
+                                "name": file.name,
+                                "reason": f"File Size Limit - {filesizeformat(file_size_limit)} for this plan"
+                            }]
+                        })
 
 
             mime_type, _ = mimetypes.guess_type(file.name)
@@ -658,26 +713,30 @@ def upload_page(request):
                 import traceback
                 print("FULL ERROR:")
                 traceback.print_exc()
-                UploadHistory.objects.create(
+                FileHistory.objects.create(
                     user=request.user,
+                    organization=None,
                     file_name=file.name,
                     file_size=file.size,
                     file_type=file_type,
+                    action="upload",
                     status="failed",
                     failure_reason="S3_UPLOAD_FAILED",
-                    failure_message=str(e),
+                    failure_message="Upload Failed at storage. Contact Admin",
+                    failure_comment=str(e),
                     ip_address=get_client_ip(request),
                 )
                 return JsonResponse({
                     "success": True,
                     "rejected_files": [{
                         "name": file.name,
-                        "reason": "Upload failed"
+                        "reason": "Upload Failed at storage. Contact Admin"
                     }]
                 })  
 
             CloudFile.objects.create(
                 user=request.user,
+                organization=None,
                 file_name=file.name,
                 file_size=file.size,
                 file_type=file_type,
@@ -688,12 +747,14 @@ def upload_page(request):
                 public_id=s3_key,
             )
 
-            UploadHistory.objects.create(
+            FileHistory.objects.create(
                 user=request.user,
+                organization=None,
                 file_name=file.name,
                 file_size=file.size,
                 file_type=file_type,
                 mime_type=mime_type,
+                action="upload",
                 status="success",
                 file_url=file_url,
                 public_id=s3_key,
@@ -713,6 +774,258 @@ def upload_page(request):
     
 
 
+def org_upload_page(request):
+    if request.user.is_authenticated and request.user.org_membership.is_active and request.user.org_membership.organization.is_active:
+        membership = request.user.org_membership
+        if membership:
+            org = membership.organization
+        if request.method == 'GET':
+            if request.user.is_superuser:
+                base_template = "adminpanel/admin_base.html"
+            else:
+                base_template = "storageapp/base.html"
+
+            # 👇 IMPORTANT PART
+            recent_uploads = (
+                FileHistory.objects
+                .filter(user=request.user,organization=org)
+                .order_by("-created_at")[:10]
+            )
+
+            return render(
+                request,
+                "storageapp/org-upload.html",
+                {"recent_uploads": recent_uploads,
+                "base_template": base_template},
+            )
+            
+        if request.method == 'POST':
+            file = request.FILES.get('file')
+
+            if not file:
+                return render(request, "storageapp/org-upload.html", {
+                    "error": "Please select a file",
+                    "base_template": base_template
+                })
+            
+            used = (
+                    CloudFile.objects
+                    .filter(user=request.user, organization=org, is_deleted=False)
+                    .aggregate(total=Sum("file_size"))["total"] or 0
+                )
+
+            
+            if membership.can_upload:
+                if org:
+                    limit = org.storage_limit
+                    file_size_limit = org.file_size_lmt
+                else:
+                    limit = 0
+                    file_size_limit = 0
+            else:
+                FileHistory.objects.create(
+                        user=request.user,
+                        organization=org,
+                        file_name=file.name,
+                        file_size=file.size,
+                        file_type="other",
+                        action="upload",
+                        status="denied",
+                        failure_reason="Permission_NOT_GIVEN",
+                        failure_message="No permission to upload files. Contact organization admin.",
+                        ip_address=get_client_ip(request),
+                    )
+                return JsonResponse({
+                    "success": True,
+                    "rejected_files": [{
+                        "name": file.name,
+                        "reason": "No permission to upload files. Contact organization admin."
+                    }]
+                })
+            
+
+            if limit is not None or file_size_limit is not None:
+                if limit == 0 or file_size_limit == 0:
+                    FileHistory.objects.create(
+                        user=request.user,
+                        organization=org,
+                        file_name=file.name,
+                        file_size=file.size,
+                        file_type="other",
+                        action="upload",
+                        status="failed",
+                        failure_reason="PLAN_ERROR",
+                        failure_message="Error in Organization configure or storage. Contact organization admin.",
+                        ip_address=get_client_ip(request),
+                    )
+                    return JsonResponse({
+                        "success": True,
+                        "rejected_files": [{
+                            "name": file.name,
+                            "reason": "Error in Organization configure or storage. Contact organization admin."
+                        }]
+                    })
+                
+                if limit is not None:
+                    remaining_space = limit - used
+
+                    if remaining_space <= 0:
+                        FileHistory.objects.create(
+                            user=request.user,
+                            organization=org,
+                            file_name=file.name,
+                            file_size=file.size,
+                            file_type="other",
+                            action="upload",
+                            status="failed",
+                            failure_reason="STORAGE_FULL",
+                            failure_message="Not enough storage. Upgrade storage.",
+                            ip_address=get_client_ip(request),
+                        )
+                        return JsonResponse({
+                            "success": True,
+                            "rejected_files": [{
+                                "name": file.name,
+                                "reason": "Not enough storage. Upgrade storage."
+                            }]
+                        })
+                
+                
+                    # 🚫 If this file does not fit, skip it
+                    if file.size > remaining_space:
+                        FileHistory.objects.create(
+                            user=request.user,
+                            organization=org,
+                            file_name=file.name,
+                            file_size=file.size,
+                            file_type="other",
+                            action="upload",
+                            status="failed",
+                            failure_reason="STORAGE_FULL",
+                            failure_message="Not enough storage. Upgrade storage.",
+                            ip_address=get_client_ip(request),
+                        )
+                        return JsonResponse({
+                            "success": True,
+                            "rejected_files": [{
+                                "name": file.name,
+                                "reason": "Not enough storage. Upgrade storage."
+                            }]
+                        })
+                
+                if file_size_limit is not None:
+            
+                    if file.size > file_size_limit:
+                        FileHistory.objects.create(
+                            user=request.user,
+                            organization=org,
+                            file_name=file.name,
+                            file_size=file.size,
+                            file_type="other",
+                            action="upload",
+                            status="failed",
+                            failure_reason="FILE_TOO_LARGE",
+                            failure_message=f"File Size Limit - {filesizeformat(file_size_limit)}.",
+                            ip_address=get_client_ip(request),
+                        )
+                        return JsonResponse({
+                            "success": True,
+                            "rejected_files": [{
+                                "name": file.name,
+                                "reason": f"File Size Limit - {filesizeformat(file_size_limit)}."
+                            }]
+                        })
+
+
+            mime_type, _ = mimetypes.guess_type(file.name)
+
+            if mime_type and mime_type.startswith("image"):
+                file_type = "image"
+                folder = "images"
+            
+            elif mime_type and mime_type.startswith("video"):
+                file_type = "video"
+                folder = "videos"
+
+            elif mime_type == "application/pdf":
+                file_type = "document"
+                folder = "pdfs"
+
+            else:
+                file_type = "other"
+                folder = "documents"
+
+            try:
+                print("Uploading to S3...")
+                file_url, s3_key = upload_to_s3(file, folder) 
+                print("Upload success")
+
+            except Exception as e:
+                import traceback
+                print("FULL ERROR:")
+                traceback.print_exc()
+                FileHistory.objects.create(
+                    user=request.user,
+                    organization=org,
+                    file_name=file.name,
+                    file_size=file.size,
+                    file_type=file_type,
+                    action="upload",
+                    status="failed",
+                    failure_reason="S3_UPLOAD_FAILED",
+                    failure_message="Upload Failed at storage. Contact organization admin",
+                    failure_comment=str(e),
+                    ip_address=get_client_ip(request),
+                )
+                return JsonResponse({
+                    "success": True,
+                    "rejected_files": [{
+                        "name": file.name,
+                        "reason": "Upload Failed at storage. Contact organization admin"
+                    }]
+                })  
+
+            CloudFile.objects.create(
+                user=request.user,
+                organization=org,
+                file_name=file.name,
+                file_size=file.size,
+                file_type=file_type,
+                file_url=generate_presigned_url(
+                            s3_key,
+                            filename=file.name
+                        ),
+                public_id=s3_key,
+            )
+
+            FileHistory.objects.create(
+                user=request.user,
+                organization=org,
+                file_name=file.name,
+                file_size=file.size,
+                file_type=file_type,
+                mime_type=mime_type,
+                action="upload",
+                status="success",
+                file_url=file_url,
+                public_id=s3_key,
+                ip_address=get_client_ip(request),
+            )
+
+        return JsonResponse({
+            "success": True,
+            "uploaded_files": [file.name],
+            "rejected_files": []
+        })
+        
+    else: 
+        next_url = reverse('storageapp:org_upload_page')
+        request.session['next_url'] = next_url
+        return redirect('accounts:signin_page')
+
+    
+
+
 
 @require_POST
 @login_required
@@ -720,10 +1033,17 @@ def upload_cancelled(request):
     file_name = request.POST.get("file_name")
     file_size = request.POST.get("file_size")
 
-    UploadHistory.objects.create(
+    membership = request.user.org_membership
+    if membership:
+        org = membership.organization
+
+    FileHistory.objects.create(
         user=request.user,
+        organization=org if org else None,
         file_name=file_name,
         file_size=file_size,
+        action="upload",
+        file_type="other",
         status="cancelled",
         failure_reason="CANCELLED",
         failure_message="User cancelled upload",
@@ -813,21 +1133,19 @@ def myfiles(request):
             base_template = "adminpanel/admin_base.html"
         else:
             base_template = "storageapp/base.html"
+
         q = request.GET.get("q", "").strip()
         file_type = request.GET.get("type")
 
         files = CloudFile.objects.filter(
             user=request.user,
+            organization=None,
             is_deleted=False
         )
 
         # 🔹 Filter by category
         if file_type:
             files = files.filter(file_type=file_type)
-
-        # 🔹 Search inside selected category
-        if q:
-            files = files.filter(file_name__icontains=q)
 
         files = files.order_by("-uploaded_at")
 
@@ -846,6 +1164,48 @@ def myfiles(request):
         return redirect('accounts:signin_page')
 
 
+
+
+
+def org_files(request):
+    if request.user.is_authenticated and request.user.org_membership.is_active and request.user.org_membership.organization.is_active:
+        if request.user.is_superuser:
+            base_template = "adminpanel/admin_base.html"
+        else:
+            base_template = "storageapp/base.html"
+        
+        membership = request.user.org_membership
+        if membership:
+            org = membership.organization
+
+        q = request.GET.get("q", "").strip()
+        file_type = request.GET.get("type")
+
+        files = CloudFile.objects.filter(
+            user=request.user,
+            organization=org,
+            is_deleted=False
+        )
+
+        # 🔹 Filter by category
+        if file_type:
+            files = files.filter(file_type=file_type)
+
+        files = files.order_by("-uploaded_at")
+
+        return render(
+            request,
+            "storageapp/org-files.html",
+            {
+                "files": files,
+                "active_type": file_type,
+                "base_template": base_template,
+            }
+        )
+    else: 
+        next_url = reverse('storageapp:org_files')
+        request.session['next_url'] = next_url
+        return redirect('accounts:signin_page')
 
 
 def trash(request):

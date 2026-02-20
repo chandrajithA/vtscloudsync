@@ -3,10 +3,10 @@
 {% load humanize %}
 {% load tz %}
 
-{% block title %}My Files - CloudSync{% endblock %}
+{% block title %}{% if request.user.org_membership %}{{request.user.org_membership.organization.name}} Files - CloudSync{% endif %}{% endblock %}
 
 {% block style %}
-<link rel="stylesheet" href="{% static 'css/myfiles.css' %}">
+<link rel="stylesheet" href="{% static 'css/org-files.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -22,7 +22,7 @@
 </div>
 {% endif %}
 
-<h2 class="page-title">My Files {% if active_type %}- {{active_type|capfirst}} {% endif %}</h2>
+<h2 class="page-title">{% if request.user.org_membership %}{{request.user.org_membership.organization.name}} Files {% if active_type %}- {{active_type|capfirst}} {% endif %}{% endif %}</h2>
 
 <div class="files-table">
 
@@ -30,7 +30,7 @@
     <div class="table-head">
         <span>Name</span>
         <span>Uploaded</span>
-        <span>Owner</span>
+        <span>Upload By</span>
         <span></span>
     </div>
 
@@ -66,9 +66,9 @@
             {{ file.uploaded_at|localtime|date:"d M y, h:i A" }}
         </div>
 
-        <!-- OWNER -->
+        <!-- UPLOAD BY -->
         <div class="file-owner">
-            {{ file.user.first_name }} (Self)
+            {{ file.user.first_name }}
         </div>
 
         <!-- ACTIONS -->
@@ -109,12 +109,6 @@
                     <img src="{% static 'images/shareicon.png' %}" alt="Share">
             </a>
 
-            <button class="icon-btn share"
-                    title="Give access"
-                    onclick="shareFile('{{ file.id }}')">
-                <img src="{% static 'images/share.png' %}" alt="">
-            </button>
-
             <button 
                 class="icon-btn trash"
                 title="Move to Trash"
@@ -138,8 +132,6 @@
     <p id="noSearchResults" class="empty" style="display:none;">
         No files found
     </p>
-
-    
 
 </div>
 
@@ -222,29 +214,7 @@ function moveToTrash(fileId) {
     });
 }
 
-function shareFile(fileId) {
-    const username = prompt("Enter username to share with:");
-    if (!username) return;
 
-    fetch(`/user/file/${fileId}/share/`, {
-        method: "POST",
-        headers: {
-            "X-CSRFToken": "{{ csrf_token }}",
-        },
-        body: new URLSearchParams({
-            username: username
-        })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            alert("✅ File shared successfully");
-        } else {
-            alert(data.error);
-        }
-    })
-    .catch(() => alert("❌ Error occurred"));
-}
 
 let currentShareUrl = "";
 

@@ -201,10 +201,25 @@
             <button onclick="window.location.href='{% url 'subscriptions:upgrade_page' %}'" class="btn-outline">Choose Pro</button>
         </div>
 
+        <!-- Ultra -->
+        <div class="pricing-card">
+            <h3 class="plan-name">Ultra</h3>
+            <h1 class="storage">100 GB</h1>
+
+            <ul class="features">
+                <li>Big File support</li>
+                <li>Admin Control</li>
+                <li>Advanced Security</li>
+            </ul>
+
+            <button onclick="window.location.href='{% url 'subscriptions:upgrade_page' %}'" class="btn-outline">Choose Ultra</button>
+        </div>
+
+
         <!-- Business -->
         <div class="pricing-card">
             <h3 class="plan-name">Business</h3>
-            <h1 class="storage">100 GB</h1>
+            <h1 class="storage">Customize Storage</h1>
 
             <ul class="features">
                 <li>Team Account</li>
@@ -212,7 +227,7 @@
                 <li>Advanced Security</li>
             </ul>
 
-            <button onclick="window.location.href='{% url 'subscriptions:upgrade_page' %}'" class="btn-outline">Choose Business</button>
+            <button onclick="" class="btn-outline">Contact Team</button>
         </div>
 
     </div>
