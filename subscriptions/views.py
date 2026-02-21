@@ -13,11 +13,9 @@ from django.db.models import Q
 
 
 def upgrade_page(request):
-
-    if request.user.is_authenticated:
-        
-        subscription = UserSubscription.objects.select_related("plan").get(user=request.user)
-        current_plan = subscription.plan
+    subscription = UserSubscription.objects.select_related("plan").get(user=request.user)
+    current_plan = subscription.plan
+    if request.user.is_authenticated and current_plan.name != "Unlimited":        
 
         if current_plan.name.lower() == "free":
             plans = Plan.objects.exclude(name__iexact="free")

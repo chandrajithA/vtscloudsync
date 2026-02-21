@@ -78,10 +78,22 @@ def admin_dashboard(request):
     run_daily_cleanup()
     if request.user.is_authenticated and request.user.is_superuser:
         total_users = User.objects.count()
-        active_files = CloudFile.objects.filter(is_deleted=False)
-        total_files = active_files.count()
-        storage_used = active_files.aggregate(total=models.Sum("file_size"))["total"] or 0
-
+        total_files=CloudFile.objects.filter()
+        total_files_count=total_files.count()
+        total_storage_used = total_files.aggregate(total=models.Sum("file_size"))["total"] or 0
+        user_active_files = CloudFile.objects.filter(organization=None,is_deleted=False)
+        user_active_files_count = user_active_files.count()
+        user_active_storage = user_active_files.aggregate(total=models.Sum("file_size"))["total"] or 0
+        user_deleted_files = CloudFile.objects.filter(organization=None,is_deleted=True)
+        user_deleted_files_count = user_deleted_files.count()
+        user_trash_storage = user_deleted_files.aggregate(total=models.Sum("file_size"))["total"] or 0
+        total_organization = Organization.objects.count()
+        org_active_files = CloudFile.objects.filter(organization__isnull=False,is_deleted=False)
+        org_active_files_count = org_active_files.count()
+        org_active_storage = org_active_files.aggregate(total=models.Sum("file_size"))["total"] or 0
+        org_deleted_files = CloudFile.objects.filter(organization__isnull=False,is_deleted=True)
+        org_deleted_files_count = org_deleted_files.count()
+        org_trash_storage = org_deleted_files.aggregate(total=models.Sum("file_size"))["total"] or 0
         # Plan distribution
         plan_stats = (
             UserSubscription.objects
@@ -97,8 +109,17 @@ def admin_dashboard(request):
 
         return render(request, "adminpanel/dashboard.html", {
             "total_users": total_users,
-            "total_files": total_files,
-            "storage_used": storage_used,
+            "total_files_count": total_files_count,
+            "total_storage_used": total_storage_used,
+            "user_active_files_count": user_active_files_count,
+            "user_active_storage": user_active_storage,
+            "user_deleted_files_count": user_deleted_files_count,
+            "user_trash_storage": user_trash_storage,
+            "total_organization": total_organization,
+            "org_active_files_count": org_active_files_count,
+            "org_active_storage": org_active_storage,
+            "org_deleted_files_count": org_deleted_files_count,
+            "org_trash_storage": org_trash_storage,
             "plan_stats": plan_stats,
             "recent_activity": recent_activity,
         })
@@ -1025,11 +1046,32 @@ def org_upload_page(request):
 
     
 
+@require_POST
+@login_required
+def upload_cancelled(request):
+    file_name = request.POST.get("file_name")
+    file_size = request.POST.get("file_size")
+
+    FileHistory.objects.create(
+        user=request.user,
+        organization=None,
+        file_name=file_name,
+        file_size=file_size,
+        action="upload",
+        file_type="other",
+        status="cancelled",
+        failure_reason="CANCELLED",
+        failure_message="User cancelled upload",
+        ip_address=get_client_ip(request),
+    )
+
+    return JsonResponse({"success": True})
+
 
 
 @require_POST
 @login_required
-def upload_cancelled(request):
+def org_upload_cancelled(request):
     file_name = request.POST.get("file_name")
     file_size = request.POST.get("file_size")
 
@@ -1039,7 +1081,7 @@ def upload_cancelled(request):
 
     FileHistory.objects.create(
         user=request.user,
-        organization=org if org else None,
+        organization=org,
         file_name=file_name,
         file_size=file_size,
         action="upload",

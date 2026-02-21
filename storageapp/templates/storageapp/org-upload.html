@@ -302,7 +302,7 @@ function uploadSingleFile(file) {
             cancelData.append("file_name", file.name);
             cancelData.append("file_size", file.size);
 
-            fetch("{% url 'storageapp:upload_cancelled' %}", {
+            fetch("{% url 'storageapp:org_upload_cancelled' %}", {
                 method: "POST",
                 headers: {
                     "X-CSRFToken": csrfToken

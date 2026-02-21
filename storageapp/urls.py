@@ -16,6 +16,7 @@ urlpatterns = [
     path('settings/', settings_page, name='settings_page'), 
 
     path("upload/cancelled/", upload_cancelled, name="upload_cancelled"),
+    path("organization/upload/cancelled/", org_upload_cancelled, name="org_upload_cancelled"),
 
     path("file/<int:file_id>/trash/", move_to_trash, name="move_to_trash"), 
     path("file/<int:file_id>/share/", share_file_api, name="share_file"),

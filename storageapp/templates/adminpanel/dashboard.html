@@ -36,14 +36,68 @@
     </div>
 
     <div class="card">
-        <h4>Storage Used</h4>
-        <strong>{{ storage_used|filesizeformat }}</strong>
+        <h4>Total Storage</h4>
+        <strong>{{ total_storage_used|filesizeformat }}</strong>
         
     </div>
 
     <div class="card">
         <h4>Total Files</h4>
-        <strong>{{ total_files|intcomma }}</strong>
+        <strong>{{ total_files_count|intcomma }}</strong>
+        
+    </div>
+
+    <div class="card">
+        <h4>User Active Storage</h4>
+        <strong>{{ user_active_storage|filesizeformat }}</strong>
+        
+    </div>
+
+    <div class="card">
+        <h4>User Active Files</h4>
+        <strong>{{ user_active_files_count|intcomma }}</strong>
+        
+    </div>
+
+    <div class="card">
+        <h4>User Trash Storage</h4>
+        <strong>{{ user_trash_storage|filesizeformat }}</strong>
+        
+    </div>
+
+    <div class="card">
+        <h4>User Trash Files</h4>
+        <strong>{{ user_deleted_files_count|intcomma }}</strong>
+        
+    </div>
+
+    <div class="card">
+        <h4>Total Organisation</h4>
+        <strong>{{ total_organization|intcomma }}</strong>
+        
+    </div>
+
+    <div class="card">
+        <h4>Organisation Active Storage</h4>
+        <strong>{{ org_active_storage|filesizeformat }}</strong>
+        
+    </div>
+
+    <div class="card">
+        <h4>Organisation Active Files</h4>
+        <strong>{{ org_active_files_count|intcomma }}</strong>
+        
+    </div>
+
+    <div class="card">
+        <h4>Organisation Trash Storage</h4>
+        <strong>{{ org_trash_storage|filesizeformat }}</strong>
+        
+    </div>
+
+    <div class="card">
+        <h4>Organisation Trash Files</h4>
+        <strong>{{ org_deleted_files_count|intcomma }}</strong>
         
     </div>
 
