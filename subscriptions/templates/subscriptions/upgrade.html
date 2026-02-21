@@ -17,25 +17,22 @@
 
     <div class="plan-grid">
         {% for plan in plans %}
-        <div class="plan-card">
 
             {% if plan.name == 'Pro' %}
+            <div class="plan-card">
             <span class="badge">Most Popular</span>
-            {% endif %}
-
-            {% if plan.name == 'Ultra' %}
-            <span class="badge">Advance</span>
-            {% endif %}
-
             <h3>{{ plan.name }}</h3>
 
             <p class="storage">
-                {{ plan.storage_limit|filesizeformat }} Storage
+                {% if plan.storage_limit %}
+                {{ plan.storage_limit|filesizeformat }}
+                {% else %}Unlimited
+                {% endif %} Storage
             </p>
 
             <div class="price">
                 ₹{{ plan.price }}
-                <span>/ lifetime</span>
+                <span>/ Yearly</span>
             </div>
 
             <ul class="features">
@@ -50,8 +47,74 @@
                 onclick="upgradePlan({{ plan.id }})">
                 Upgrade
             </button>
+            </div>
+            {% endif %}
 
-        </div>
+            {% if plan.name == 'Ultra' %}
+            <div class="plan-card">
+            <span class="badge">Advance</span>
+            <h3>{{ plan.name }}</h3>
+
+            <p class="storage">
+                {% if plan.storage_limit %}
+                {{ plan.storage_limit|filesizeformat }}
+                {% else %}Unlimited
+                {% endif %} Storage
+            </p>
+
+            <div class="price">
+                ₹{{ plan.price }}
+                <span>/ Yearly</span>
+            </div>
+
+            <ul class="features">
+                <li>✔ Secure cloud storage</li>
+                <li>✔ Fast downloads</li>
+                <li>✔ File sharing</li>
+                <li>✔ Priority support</li>
+            </ul>
+
+            <button
+                class="upgrade-button"
+                onclick="upgradePlan({{ plan.id }})">
+                Upgrade
+            </button>
+            </div>
+            {% endif %}
+
+            {% if plan.name == 'Unlimited' %}
+            <div class="plan-card">
+            <span class="badge">Elite</span>
+            <h3>{{ plan.name }}</h3>
+
+            <p class="storage">
+                {% if plan.storage_limit %}
+                {{ plan.storage_limit|filesizeformat }}
+                {% else %}Unlimited
+                {% endif %} Storage
+            </p>
+
+            <div class="price">
+                ₹{{ plan.price }}
+                <span>/ Yearly</span>
+            </div>
+
+            <ul class="features">
+                <li>✔ Secure cloud storage</li>
+                <li>✔ Fast downloads</li>
+                <li>✔ File sharing</li>
+                <li>✔ Priority support</li>
+            </ul>
+
+            <button
+                class="upgrade-button"
+                onclick="upgradePlan({{ plan.id }})">
+                Upgrade
+            </button>
+            </div>
+            {% endif %}
+
+        
         {% endfor %}
     </div>
 

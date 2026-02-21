@@ -173,6 +173,12 @@
     }
 }
 
+@media (max-width: 600px){
+.container .logoarea .logotext{
+    display: none;
+}
+}
+
 @media (max-width: 420px) {
 .container {
     margin: auto;
@@ -180,11 +186,10 @@
 
 }
 
-.container .logoarea .logotext{
-    display: none;
-}
+
 .nav-links a {
     margin: 0 4px;
+    font-size: 13px;
     
 }
 .hero {

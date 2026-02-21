@@ -6,6 +6,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.http import JsonResponse
 from django.urls import reverse
+from django.db.models import Q
 
 # Create your views here.
 
@@ -21,7 +22,16 @@ def upgrade_page(request):
         if current_plan.name.lower() == "free":
             plans = Plan.objects.exclude(name__iexact="free")
         elif current_plan.name.lower() == "pro":
-            plans = Plan.objects.filter(name__iexact="ultra")
+            plans = Plan.objects.exclude(
+                Q(name__iexact="free") |
+                Q(name__iexact="pro")
+            )
+        elif current_plan.name.lower() == "ultra":
+            plans = Plan.objects.exclude(
+                Q(name__iexact="free") |
+                Q(name__iexact="pro") |
+                Q(name__iexact="ultra")
+            )
         else:
             plans = Plan.objects.none()
 

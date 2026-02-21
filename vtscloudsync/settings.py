@@ -118,37 +118,37 @@ WSGI_APPLICATION = 'vtscloudsync.wsgi.application'
 
 
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': env("DB_NAME"),
-#         'USER': env("DB_USER"),
-#         'PASSWORD': env("DB_PASSWORD"),
-#         'HOST': env("DB_HOST"),
-#         'PORT': env("DB_PORT"),
-#         'OPTIONS': {
-#             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-#         },
-#     }
-# }
-
-
-
-import dj_database_url
 DATABASES = {
-    'default': dj_database_url.config(
-        default=env("DATABASE_URL"),
-        engine='django.db.backends.mysql',
-    )
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': env("DB_NAME"),
+        'USER': env("DB_USER"),
+        'PASSWORD': env("DB_PASSWORD"),
+        'HOST': env("DB_HOST"),
+        'PORT': env("DB_PORT"),
+        'OPTIONS': {
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+        },
+    }
 }
 
 
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-USE_X_FORWARDED_HOST = True
-SECURE_SSL_REDIRECT = False
-SECURE_HSTS_SECONDS = 0
-SECURE_CONTENT_TYPE_NOSNIFF = False
-SECURE_BROWSER_XSS_FILTER = False
+
+# import dj_database_url
+# DATABASES = {
+#     'default': dj_database_url.config(
+#         default=env("DATABASE_URL"),
+#         engine='django.db.backends.mysql',
+#     )
+# }
+
+
+# SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+# USE_X_FORWARDED_HOST = True
+# SECURE_SSL_REDIRECT = False
+# SECURE_HSTS_SECONDS = 0
+# SECURE_CONTENT_TYPE_NOSNIFF = False
+# SECURE_BROWSER_XSS_FILTER = False
 
 
 

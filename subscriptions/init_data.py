@@ -14,6 +14,12 @@ def run():
         return
 
     # Create plans
+
+    free_plan, _ = Plan.objects.get_or_create(
+        name="Free",
+        defaults={"price": 0, "storage_limit": 5368709120},
+    )
+
     Plan.objects.get_or_create(
         name="Pro",
         defaults={"price": 2499, "storage_limit": 53687091200},
@@ -24,10 +30,12 @@ def run():
         defaults={"price": 4999, "storage_limit": 107374182400},
     )
 
-    free_plan, _ = Plan.objects.get_or_create(
-        name="Free",
-        defaults={"price": 0, "storage_limit": 5368709120},
+    Plan.objects.get_or_create(
+        name="Unlimited",
+        defaults={"price": 9999, "storage_limit": None},
     )
+
+    
 
     # Create superuser
     user = User.objects.filter(username=username).first()

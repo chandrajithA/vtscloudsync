@@ -101,7 +101,7 @@
             
         </p>
 
-        {% if current_plan and current_plan.name != "Ultra" %}
+        {% if current_plan and current_plan.name != "Unlimited" %}
             <a href="{% url 'subscriptions:upgrade_page' %}" class="upgrade-btn" style="{% if request.resolver_match.url_name == 'upgrade_page' %}visibility: hidden;{% endif %}">
                 Upgrade
             </a>
