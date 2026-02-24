@@ -170,17 +170,7 @@
             
 
             <div class="recent-actions">
-                {% comment %} {% if s.file.file_type == "other" %}
-                <a href="{{ s.file.file_url }}" target="_blank" title="View" class="icon-btn">
-                    <img src="{% static 'images/hidepassword_icon.png' %}">
-                </a>
-                {% endif %}
-
-                <a href="{% url 'storageapp:download_file' s.file.id %}" class="icon-btn">
-                    <img src="{% static 'images/download.png' %}">
-                </a> {% endcomment %}
-
-
+        
                 {% if s.file.file_type|lower != "other" %}
                 <a href="{% url 'storageapp:view_file' s.file.id %}" target="_blank" class="icon-btn">
                     <img src="{% static 'images/hidepassword_icon.png' %}" alt="">

@@ -6,7 +6,7 @@ app_name = 'storageapp'
 urlpatterns = [
     path('dashboard/', dashboard, name='dashboard'),   
     path("admin/dashboard/", admin_dashboard, name="admin_dashboard"),
-    path('organization/dashboard/', org_dashboard, name='org_dashboard'), 
+    path('organization/admin/dashboard/', org_admin_dashboard, name='org_admin_dashboard'), 
     path('upload/', upload_page, name='upload_page'),
     path('organization/upload/', org_upload_page, name='org_upload_page'),
     path('myfiles/', myfiles, name='myfiles'),  
@@ -35,7 +35,11 @@ urlpatterns = [
     path("trash/restore-all/", restore_all, name="restore_all"),
     path("trash/empty/", empty_trash, name="empty_trash"),
     
-    path("admin/api/user-activity/", admin_user_activity_api, name="admin_user_activity_api"),
-    path("admin/api/plan-distribution/", admin_plan_distribution_api, name="admin_plan_distribution_api"),
-    path("admin/api/storage-growth/", admin_storage_growth_api, name="admin_storage_growth_api"),
+    path("admin/api/user-activity/", super_admin_user_activity_api, name="super_admin_user_activity_api"),
+    path("admin/api/plan-distribution/", super_admin_plan_distribution_api, name="super_admin_plan_distribution_api"),
+    path("admin/api/storage-growth/", super_admin_storage_growth_api, name="super_admin_storage_growth_api"),
+
+    path("admin/org/api/user-activity/", org_admin_user_activity_api, name="org_admin_user_activity_api"),
+    path("admin/org/api/plan-distribution/", org_admin_plan_distribution_api, name="org_admin_plan_distribution_api"),
+    path("admin/org/api/storage-growth/", org_admin_storage_growth_api, name="org_admin_storage_growth_api"),
 ]

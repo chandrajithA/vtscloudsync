@@ -231,7 +231,20 @@ function verifyPayment(response) {
 
                 window.location.href = redirectUrl;
             }, 2000);
+        }else{
+            // ❌ PAYMENT FAILED
+            showOverlay(
+                data.error || "Payment failed. Amount not debited. If debited, please contact support. Redirecting to dashboard…"
+            );
+
+            setTimeout(() => {
+                hideOverlay();
+            }, 7000);
         }
+    })
+    .catch(() => {
+        showOverlay("Something went wrong. Please contact support.");
+        setTimeout(hideOverlay, 6000);
     });
     
 }

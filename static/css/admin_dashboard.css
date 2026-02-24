@@ -140,6 +140,7 @@
 .recent-activity-area{
     max-height: 300px;
     overflow-y: scroll;
+    padding-right: 15px;
 }
 
 .admin-card ul {

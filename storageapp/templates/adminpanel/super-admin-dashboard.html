@@ -2,7 +2,7 @@
 {% load static %}
 {% load humanize %}
 
-{% block title %}Admin Dashboard{% endblock %}
+{% block title %}Cloudsync Admin Dashboard{% endblock %}
 
 {% block style %}
 <link rel="stylesheet" href="{% static 'css/admin_dashboard.css' %}">
@@ -21,7 +21,7 @@
 </div>
 {% endif %}
 
-<h2 class="dashboard-title">Admin Dashboard Overview</h2>
+<h2 class="dashboard-title">Cloudsync Admin Dashboard</h2>
 <p class="dashboard-subtitle">
     Monitor your cloud storage platform performance
 </p>
@@ -32,6 +32,12 @@
     <div class="card">
         <h4>Total Users</h4>
         <strong>{{ total_users|intcomma }}</strong>
+        
+    </div>
+
+    <div class="card">
+        <h4>Active Users</h4>
+        <strong>{{ active_users|intcomma }}</strong>
         
     </div>
 
@@ -136,9 +142,9 @@
             <ul class="activity-list">
                 {% for file in recent_activity %}
                     <li>
-                        <strong>{{ file.user.username }}</strong>
-                        uploaded {{ file.file_name }}
-                        <small>{{ file.uploaded_at|naturaltime }}</small>
+                        <strong>{{ file.user.username|capfirst }}:</strong>
+                        {{file.action|capfirst}} - {{ file.file_name }} {% if file.organization %}({{file.organization.name}}){% endif %}
+                        <small>{{ file.created_at|naturaltime }}</small>
                     </li>
                 {% endfor %}
             </ul>

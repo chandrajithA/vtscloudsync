@@ -1,0 +1,258 @@
+{% extends "adminpanel/admin_base.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}{% if request.user.org_membership %}{{request.user.org_membership.organization.name}} - {% endif %}Admin Dashboard{% endblock %}
+
+{% block style %}
+<link rel="stylesheet" href="{% static 'css/admin_dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+
+{% if messages %}
+<div class="toast-container">
+    {% for message in messages %}
+    <div class="toast {{ message.tags }}">
+        <span>{{ message }}</span>
+        <button onclick="closeToast(this)">×</button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<h2 class="dashboard-title">{% if request.user.org_membership %}{{request.user.org_membership.organization.name}} {% endif %}Admin Dashboard</h2>
+<p class="dashboard-subtitle">
+    Monitor your {% if request.user.org_membership %}{{request.user.org_membership.organization.name}}{% endif %} organization performance
+</p>
+
+<!-- KPI CARDS -->
+<div class="storage-cards admin-cards">
+
+    <div class="card">
+        <h4>{% if request.user.org_membership %}{{request.user.org_membership.organization.short_name}} {% endif %}Total Users</h4>
+        <strong>{{ total_users|intcomma }}</strong>
+        
+    </div>
+
+    <div class="card">
+        <h4>{% if request.user.org_membership %}{{request.user.org_membership.organization.short_name}} {% endif %}Active Users</h4>
+        <strong>{{ active_users|intcomma }}</strong>
+        
+    </div>
+
+    <div class="card">
+        <h4>{% if request.user.org_membership %}{{request.user.org_membership.organization.short_name}} {% endif %}Active Storage</h4>
+        <strong>{{ org_active_storage|filesizeformat }}</strong>
+        
+    </div>
+
+    <div class="card">
+        <h4>{% if request.user.org_membership %}{{request.user.org_membership.organization.short_name}} {% endif %}Active Files</h4>
+        <strong>{{ org_active_files_count|intcomma }}</strong>
+        
+    </div>
+
+    <div class="card">
+        <h4>{% if request.user.org_membership %}{{request.user.org_membership.organization.short_name}} {% endif %}Trash Storage</h4>
+        <strong>{{ org_trash_storage|filesizeformat }}</strong>
+        
+    </div>
+
+    <div class="card">
+        <h4>{% if request.user.org_membership %}{{request.user.org_membership.organization.short_name}} {% endif %}Trash Files</h4>
+        <strong>{{ org_deleted_files_count|intcomma }}</strong>
+        
+    </div>
+
+</div>
+
+<!-- CHARTS -->
+<div class="admin-grid">
+
+    <!-- USER ACTIVITY -->
+    <div class="admin-card large">
+        <h4>{% if request.user.org_membership %}{{request.user.org_membership.organization.short_name}} {% endif %}User Activity</h4>
+        <canvas id="userActivityChart"></canvas>
+    </div>
+
+    <div class="admin-card">
+        <h4>{% if request.user.org_membership %}{{request.user.org_membership.organization.short_name}} {% endif %}Plan Distribution</h4>
+        <canvas id="planChart"></canvas>
+    </div>
+
+    <div class="admin-card">
+        <h4>{% if request.user.org_membership %}{{request.user.org_membership.organization.short_name}} {% endif %}Storage Growth</h4>
+        <p style="margin-bottom: 15px;">Total storage usage overtime (MB)</p>
+        <canvas id="storageGrowthChart"></canvas>
+    </div>
+
+    <!-- RECENT ACTIVITY -->
+    <div class="admin-card">
+        <h4>{% if request.user.org_membership %}{{request.user.org_membership.organization.short_name}} {% endif %}Recent Activity</h4>
+        <div class="recent-activity-area">
+            <ul class="activity-list">
+                {% for file in recent_activity %}
+                    <li>
+                        <strong>{{ file.user.username|capfirst }}:</strong>
+                        {{file.action|capfirst}} - {{ file.file_name }} {% if file.organization %}({{file.organization.name}}){% endif %}
+                        <small>{{ file.created_at|naturaltime }}</small>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+</div>
+
+
+
+
+
+{% endblock %}
+
+{% block script %}
+
+
+<script>
+/* USER ACTIVITY BAR CHART */
+document.addEventListener("DOMContentLoaded", function () {
+
+    const ctx = document
+        .getElementById("userActivityChart")
+        .getContext("2d");
+
+    fetch("/user/admin/org/api/user-activity/")
+        .then(res => res.json())
+        .then(data => {
+            new Chart(ctx, {
+                type: "line",
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: "User Logins",
+                        data: data.data,
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0,      // ✅ NO DECIMALS
+                                stepSize: 1        // ✅ INCREMENT BY 1
+                            }
+                        }
+                    }
+                }
+            });
+        });
+
+});
+
+
+/* PLAN DISTRIBUTION DONUT */ 
+fetch("/user/admin/org/api/plan-distribution/") 
+    .then(res => res.json()) 
+    .then(res => { 
+        new Chart(document.getElementById("planChart"), 
+            { type: "doughnut", data: 
+                { labels: res.labels, 
+                datasets: [{ data: res.data, 
+                    backgroundColor: [ "#6366f1", "#22c55e", "#f59e0b", "#ef4444" ], 
+                    cutout: "70%" }] 
+                }, 
+                options: 
+                { responsive: true, 
+                    maintainAspectRatio: false } 
+                }); 
+            });
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const ctx = document
+        .getElementById("storageGrowthChart")
+        .getContext("2d");
+
+    fetch("/user/admin/org/api/storage-growth/")
+        .then(res => res.json())
+        .then(data => {
+            new Chart(ctx, {
+                type: "bar",
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        data: data.data,
+                        backgroundColor: "#6366f1",
+                        borderRadius: 4,
+                        barThickness: 10   // 🔹 thin bars like Figma
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => `${ctx.raw} MB`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: true,
+                                color: "#eef0ff",   // 🔹 light vertical grid lines
+                                drawBorder: false
+                            },
+                            ticks: {
+                                maxRotation: 0,
+                                autoSkip: true
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                display: false      // 🔹 no horizontal grid
+                            },
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    }
+                }
+            });
+        });
+
+});
+
+function closeToast(btn) {
+    const toast = btn.parentElement;
+    toast.style.opacity = "0";
+    toast.style.transform = "translateX(60px)";
+    setTimeout(() => toast.remove(), 300);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    const toasts = document.querySelectorAll(".toast");
+
+    toasts.forEach((toast, index) => {
+        setTimeout(() => {
+            toast.style.opacity = "0";
+            toast.style.transform = "translateX(60px)";
+            setTimeout(() => toast.remove(), 300);
+        }, 5000 + index * 300);
+    });
+});
+
+</script>
+
+
+
+{% endblock %}

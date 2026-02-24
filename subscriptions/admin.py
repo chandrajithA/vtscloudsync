@@ -3,7 +3,7 @@ from .models import *
 
 @admin.register(Plan)
 class PlanAdmin(admin.ModelAdmin):
-    list_display = ("name", "formatted_storage", "price","formatted_file_size")
+    list_display = ("name", "formatted_storage", "price","formatted_file_size","order")
     search_fields = ("name",)
     ordering = ("price",)
 

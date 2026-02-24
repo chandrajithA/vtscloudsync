@@ -78,6 +78,7 @@ class FileHistory(models.Model):
         ("view", "View"),
         ("download", "Download"),
         ("share", "Share"),
+        ("cancel", "Cancel")
     )
     STATUS_CHOICES = (
         ("success", "Success"),

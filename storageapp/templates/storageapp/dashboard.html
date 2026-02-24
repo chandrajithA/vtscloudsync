@@ -113,23 +113,6 @@
 
         <div class="recent-actions">
 
-            {% comment %} cloudinary part {% endcomment %}
-            
-            {% comment %} {% if file.file_type|lower != "other" %}
-            <a href="{{ file.file_url }}" target="_blank" class="icon-btn">
-                <img src="{% static 'images/hidepassword_icon.png' %}" alt="">
-            </a>
-            {% endif %}
-            
-            
-            <a href="{% url 'storageapp:download_file' file.id %}"
-            class="icon-btn download"
-            title="Download">
-                <img src="{% static 'images/download.png' %}" alt="">
-            </a> {% endcomment %}
-
-            {% comment %} cloudinary part {% endcomment %}
-
             {% if file.file_type|lower != "other" %}
             <a href="{% url 'storageapp:view_file' file.id %}" target="_blank" class="icon-btn">
                 <img src="{% static 'images/hidepassword_icon.png' %}" alt="">

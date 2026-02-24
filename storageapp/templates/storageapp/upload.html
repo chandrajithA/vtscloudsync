@@ -128,8 +128,6 @@
         <p style="color:red;">{{ error }}</p>
     {% endif %}
 
-    {% comment %} <a href="https://res.cloudinary.com/diyp8u3jr/raw/upload/v1767987558/videos/VID-20250630-WA0000.mp4" download>Download File</a> {% endcomment %}
-
 
 
 
@@ -234,6 +232,9 @@ function uploadSingleFile(file) {
             if (e.lengthComputable) {
                 const percent = (e.loaded / e.total) * 100;
                 bar.style.width = percent + "%";
+                if(percent === 100){
+                    cancelBtn.style.display = "none";
+                }
             }
         };
 

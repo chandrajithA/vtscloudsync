@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 import environ
 import os
-import cloudinary
+
 
 
 
@@ -192,9 +192,6 @@ STATICFILES_DIRS = [
 
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-
-
-
 AUTH_USER_MODEL = 'accounts.User'
 
 AUTHENTICATION_BACKENDS = (
@@ -240,7 +237,6 @@ CACHES = {
 }
 
 
-
 STORAGES = {
     "default": {
         "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
@@ -260,33 +256,6 @@ AWS_S3_FILE_OVERWRITE = False
 AWS_QUERYSTRING_AUTH = False
 
 
-
-
-# STORAGES = {
-#     "default": {
-#         "BACKEND": "storageapp.storage.CloudinaryAutoStorage",
-#     },
-#     "staticfiles": {
-#         "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
-#     },
-# }
-
-
-# CLOUDINARY_STORAGE = {
-#     'CLOUD_NAME': env("CLOUD_NAME"),
-#     'API_KEY': env("CLOUD_API_KEY"),
-#     'API_SECRET': env("CLOUD_API_SECRET")
-# }
-
-
-
-# cloudinary.config(
-#     cloud_name= env("CLOUD_NAME"),
-#     api_key=env("CLOUD_API_KEY"),
-#     api_secret= env("CLOUD_API_SECRET"),
-#     secure=True
-# )
-
 MEDIA_URL = '/media/'
 
 
@@ -302,7 +271,3 @@ RAZORPAY_KEY_SECRET = env("RAZORPAY_KEY_SECRET")
 CSRF_TRUSTED_ORIGINS = [
     "https://cloudsync-6aiv.onrender.com",
 ]
-
-
-
-DATA_UPLOAD_MAX_MEMORY_SIZE = 20 * 1024 * 1024

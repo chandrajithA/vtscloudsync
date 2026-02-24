@@ -8,11 +8,14 @@ from subscriptions.models import *
 
 def signin_page(request):
     if request.method == "GET":
-        if request.user.is_authenticated:
-            return redirect('storageapp:dashboard')
+        if request.user.is_authenticated and request.user.is_superuser:
+            return redirect("storageapp:admin_dashboard")
+        if request.user.is_authenticated and not request.user.is_superuser:
+            return redirect("storageapp:dashboard")
         else: 
-            next_url = request.GET.get('next', '') or request.session.pop('next_url', '')
+            next_url = request.GET.get('next', '') or request.session.get('next_url', '')
             prefill = request.session.pop('loginprefill', None)
+            request.session['next_url'] = next_url
             context = {
                             'next_url': next_url,
                             'prefill':prefill,
@@ -91,6 +94,7 @@ def signin_page(request):
             # Log in the user
             login(request, user, 'django.contrib.auth.backends.ModelBackend')
             UserLoginActivity.objects.create(user=user,ip_address=get_client_ip(request))
+            request.session.pop('next_url', None)
             if remember_me == "on":
                 request.session.set_expiry(6 * 60 * 60)  
             else:
@@ -106,10 +110,13 @@ def signin_page(request):
 
 def signup_page(request):
     if request.method == "GET":
-        if request.user.is_authenticated:
-            return redirect('storageapp:dashboard')
+        if request.user.is_authenticated and request.user.is_superuser:
+            return redirect("storageapp:admin_dashboard")
+        if request.user.is_authenticated and not request.user.is_superuser:
+            return redirect("storageapp:dashboard")
         
         else:
+            next_url = request.session.get('next_url', '')
             prefill = request.session.pop('signupprefill', None)
             context = {
                 'prefill':prefill,
@@ -124,6 +131,7 @@ def signup_page(request):
         userid = request.POST.get('userid')
         password = request.POST.get('password')
         confirm_password = request.POST.get('confirm_password')
+        next_url = request.session.get('next_url', '')
         
         valid = True
 
@@ -208,14 +216,14 @@ def signup_page(request):
                 username=userid,
             )
 
-            # 2️⃣ Attach FREE plan (already created by admin)
-            try:
-                free_plan = Plan.objects.get(name__iexact="free")
+            free_plan = Plan.objects.filter(name__iexact="free").first()
+
+            if free_plan:
                 UserSubscription.objects.create(
                     user=user,
                     plan=free_plan
                 )
-            except Plan.DoesNotExist:
+            else:
                 messages.error(
                     request,
                     "Free plan not configured. Please contact admin."
@@ -224,10 +232,11 @@ def signup_page(request):
             # 3️⃣ Login user
             login(request, user, 'django.contrib.auth.backends.ModelBackend')
             UserLoginActivity.objects.create(user=user,ip_address=get_client_ip(request))
+            request.session.pop('next_url', None)
             if user.is_superuser:
-                return redirect('storageapp:admin_dashboard')
+                return redirect(next_url or 'storageapp:admin_dashboard')
             else:
-                return redirect('storageapp:dashboard')
+                return redirect(next_url or 'storageapp:dashboard')
         else:
             prefill = {
                 'name': name,
@@ -238,6 +247,7 @@ def signup_page(request):
                 "confirmpassword" : confirm_password
             }
             request.session['signupprefill'] = prefill
+            request.session['next_url'] = next_url
             return redirect('accounts:signup_page')
         
 

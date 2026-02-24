@@ -5,43 +5,41 @@ import razorpay
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.http import JsonResponse
-from django.urls import reverse
-from django.db.models import Q
 
 # Create your views here.
 
 
-
+@login_required
 def upgrade_page(request):
-    subscription = UserSubscription.objects.select_related("plan").get(user=request.user)
-    current_plan = subscription.plan
-    if request.user.is_authenticated and current_plan.name != "Unlimited":        
-
-        if current_plan.name.lower() == "free":
-            plans = Plan.objects.exclude(name__iexact="free")
-        elif current_plan.name.lower() == "pro":
-            plans = Plan.objects.exclude(
-                Q(name__iexact="free") |
-                Q(name__iexact="pro")
-            )
-        elif current_plan.name.lower() == "ultra":
-            plans = Plan.objects.exclude(
-                Q(name__iexact="free") |
-                Q(name__iexact="pro") |
-                Q(name__iexact="ultra")
-            )
-        else:
-            plans = Plan.objects.none()
-
-        return render(request, "subscriptions/upgrade.html", {
-            "plans": plans,
-            "current_plan": current_plan
-        })
     
-    else: 
-        next_url = reverse('subscriptions:upgrade_page')
-        request.session['next_url'] = next_url
-        return redirect('accounts:signin_page')
+    subscription = UserSubscription.objects.select_related("plan").filter(user=request.user).first()
+    
+            
+    if subscription:
+        current_plan = subscription.plan
+        if subscription and current_plan:        
+
+            # 🔥 Fetch only higher plans
+            plans = Plan.objects.filter(
+                order__gt=current_plan.order
+            ).order_by("order")
+
+            # 🧠 If no higher plans → block upgrade
+            can_upgrade = plans.exists()
+
+            if can_upgrade:
+                return render(request, "subscriptions/upgrade.html", {
+                    "plans": plans,
+                    "current_plan": current_plan,
+                    "can_upgrade": can_upgrade,
+                })
+            elif request.user.is_superuser:
+                return redirect('storageapp:admin_dashboard')
+            else:
+                return redirect('storageapp:dashboard')
+
+    
+    
 
 
 client = razorpay.Client(
@@ -55,7 +53,12 @@ def create_order(request):
     if request.method == "POST":
         
         plan_id = request.POST.get("plan_id")
-        plan = get_object_or_404(Plan, id=plan_id)
+        if not plan_id:
+            return JsonResponse({"error": "Plan ID missing"}, status=400)
+    
+        plan = Plan.objects.filter(id=plan_id).first()
+        if not plan:
+            return JsonResponse({"error": "Invalid plan"}, status=404)
 
         amount_paise = int(plan.price * 100)
 
@@ -91,10 +94,29 @@ def payment_success(request):
     
         data = request.POST
 
-        payment = get_object_or_404(
-            Payment,
+        payment = Payment.objects.filter(
             razorpay_order_id=data.get("razorpay_order_id")
-        )
+        ).first()
+
+        if not payment:
+            return JsonResponse({"success": False, "error": "Payment not found"}, status=404)
+        
+        # 🔐 VERIFY SIGNATURE
+        try:
+            client.utility.verify_payment_signature({
+                "razorpay_order_id": data.get("razorpay_order_id"),
+                "razorpay_payment_id": data.get("razorpay_payment_id"),
+                "razorpay_signature": data.get("razorpay_signature"),
+            })
+        except razorpay.errors.SignatureVerificationError:
+            # ❌ Signature mismatch → mark failed
+            payment.status = "failed"
+            payment.save()
+
+            return JsonResponse({
+                "success": False,
+                "error": "Signature verification failed"
+            }, status=400)
 
         payment.razorpay_payment_id = data.get("razorpay_payment_id")
         payment.razorpay_signature = data.get("razorpay_signature")
@@ -102,11 +124,18 @@ def payment_success(request):
         payment.save()
 
         # ✅ UPDATE SUBSCRIPTION
-        subscription = UserSubscription.objects.get(user=payment.user)
-        subscription.plan = payment.plan
-        subscription.save()
-
-        return JsonResponse({"success": True})
+        subscription = UserSubscription.objects.filter(
+            user=payment.user
+        ).first()
+        if subscription:
+            subscription.plan = payment.plan
+            subscription.save()
+            return JsonResponse({"success": True})
+        else:
+            return JsonResponse({
+                "success": False,
+                "error": "Subscription not found"
+            }, status=400)
     else:
         return JsonResponse({"success": False}, status=400)
 
