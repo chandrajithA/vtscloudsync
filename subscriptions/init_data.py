@@ -17,22 +17,25 @@ def run():
 
     free_plan, _ = Plan.objects.get_or_create(
         name="Free",
-        defaults={"price": 0, "storage_limit": 5368709120},
+        defaults={"price": 0, "storage_limit": 5368709120, "order" : 1},
     )
 
-    Plan.objects.get_or_create(
+    pro_plan, _ = Plan.objects.get_or_create(
         name="Pro",
-        defaults={"price": 2499, "storage_limit": 53687091200},
+        defaults={"price": 2499, "storage_limit": 53687091200, "order" : 2},
     )
 
-    Plan.objects.get_or_create(
+    
+
+    ultra_plan, _ = Plan.objects.get_or_create(
         name="Ultra",
-        defaults={"price": 4999, "storage_limit": 107374182400},
+        defaults={"price": 4999, "storage_limit": 107374182400, "order" : 3},
     )
 
-    Plan.objects.get_or_create(
+
+    unlimited_plan, _ = Plan.objects.get_or_create(
         name="Unlimited",
-        defaults={"price": 9999, "storage_limit": None},
+        defaults={"price": 9999, "storage_limit": None, "order" : 4},
     )
 
     

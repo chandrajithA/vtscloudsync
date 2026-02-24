@@ -23,6 +23,7 @@ from .s3_utils import *
 from django.core.cache import cache
 from storageapp.utils import cleanup_trash
 from collections import defaultdict
+from accounts.signals import get_client_ip
 
 
 
@@ -1544,8 +1545,8 @@ def set_timezone(request):
         return JsonResponse({"success": True})
     
 
-def get_client_ip(request):
-    xff = request.META.get("HTTP_X_FORWARDED_FOR")
-    if xff:
-        return xff.split(",")[0]
-    return request.META.get("REMOTE_ADDR")
+# def get_client_ip(request):
+#     xff = request.META.get("HTTP_X_FORWARDED_FOR")
+#     if xff:
+#         return xff.split(",")[0]
+#     return request.META.get("REMOTE_ADDR")
