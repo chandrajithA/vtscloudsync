@@ -20,11 +20,15 @@ def upgrade_page(request):
         if subscription and current_plan:        
 
             # 🔥 Fetch only higher plans
-            plans = Plan.objects.filter(
-                order__gt=current_plan.order
-            ).order_by("order")
+            # plans = Plan.objects.filter(
+            #     order__gt=current_plan.order
+            # ).order_by("order")
 
-            # 🧠 If no higher plans → block upgrade
+            # # 🧠 If no higher plans → block upgrade
+            # can_upgrade = plans.exists()
+
+            plans = Plan.objects.filter()
+
             can_upgrade = plans.exists()
 
             if can_upgrade:
