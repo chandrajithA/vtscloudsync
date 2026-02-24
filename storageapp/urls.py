@@ -22,9 +22,12 @@ urlpatterns = [
     path("file/<int:file_id>/share/", share_file_api, name="share_file"),
     path("file/<int:file_id>/download/", download_file, name="download_file"),
     path("file/<int:file_id>/view/", view_file, name="view_file"),
-    
     path("shared/<int:shared_id>/remove/", remove_shared_file, name="remove_shared_file"),
     path("shared/<int:shared_id>/remove_own/", remove_shared_own_file, name="remove_shared_own_file"),
+
+    path("file/org/<int:file_id>/trash/", org_move_to_trash, name="org_move_to_trash"), 
+    path("file/org/<int:file_id>/download/", org_download_file, name="org_download_file"),
+    path("file/org/<int:file_id>/view/", org_view_file, name="org_view_file"),
 
     path("check-username/", check_username, name="check_username"),
     path("update-username/", update_username, name="update_username"),

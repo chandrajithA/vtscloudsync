@@ -58,7 +58,9 @@ def dashboard(request):
             }
 
         # ---- RECENT FILES ----
-        recent_files = files.order_by("-uploaded_at")[:6]
+        recent_files = files.filter(
+            uploaded_at__gte=timezone.now() - timedelta(hours=24)
+        ).order_by("-uploaded_at")
 
         return render(request, "storageapp/dashboard.html", {
             "cards": cards,
@@ -93,12 +95,6 @@ def admin_dashboard(request):
         org_deleted_files = CloudFile.objects.filter(organization__isnull=False,is_deleted=True)
         org_deleted_files_count = org_deleted_files.count()
         org_trash_storage = org_deleted_files.aggregate(total=models.Sum("file_size"))["total"] or 0
-        # Plan distribution
-        plan_stats = (
-            UserSubscription.objects
-            .values("plan__name")
-            .annotate(count=Count("id"))
-        )
 
         recent_activity = (
             FileHistory.objects
@@ -255,12 +251,6 @@ def org_admin_dashboard(request):
         org_deleted_files = CloudFile.objects.filter(organization=org,is_deleted=True)
         org_deleted_files_count = org_deleted_files.count()
         org_trash_storage = org_deleted_files.aggregate(total=models.Sum("file_size"))["total"] or 0
-        # Plan distribution
-        plan_stats = (
-            UserSubscription.objects.filter(user__org_membership__organization=org)
-            .values("plan__name")
-            .annotate(count=Count("user", distinct=True))
-        )
 
         recent_activity = (
             FileHistory.objects.filter(organization=org)
@@ -424,8 +414,12 @@ def upload_page(request):
         # 👇 IMPORTANT PART
         recent_uploads = (
             FileHistory.objects
-            .filter(user=request.user,organization=None)
-            .order_by("-created_at")[:10]
+            .filter(
+                user=request.user,
+                organization=None,
+                created_at__gte=timezone.now() - timedelta(hours=24)
+            )
+            .order_by("-created_at")
         )
 
         return render(
@@ -676,8 +670,12 @@ def org_upload_page(request):
             # 👇 IMPORTANT PART
             recent_uploads = (
                 FileHistory.objects
-                .filter(user=request.user,organization=org)
-                .order_by("-created_at")[:10]
+                .filter(
+                    user=request.user,
+                    organization=org,
+                    created_at__gte=timezone.now() - timedelta(hours=24)
+                )
+                .order_by("-created_at")
             )
 
             return render(
@@ -1194,7 +1192,6 @@ def org_files(request):
         file_type = request.GET.get("type")
 
         files = CloudFile.objects.filter(
-            user=request.user,
             organization=org,
             is_deleted=False
         )
@@ -1214,6 +1211,109 @@ def org_files(request):
                 "base_template": base_template,
             }
         )
+    elif request.user.is_superuser:
+        return redirect('storageapp:admin_dashboard')
+    else:
+        return redirect('storageapp:dashboard')
+
+
+@require_POST
+@login_required
+def org_move_to_trash(request, file_id):
+
+    org_member = request.user.org_membership
+    org = request.user.org_membership.organization
+    if org_member and org and org_member.can_delete and org_member.is_active and org.is_active:
+    
+        file = get_object_or_404(CloudFile, id=file_id, organization=org)
+        file.is_deleted = True
+        file.deleted_at = timezone.now()
+        file.save()
+
+        files = CloudFile.objects.filter( organization=org, is_deleted=False)
+
+        stats = {
+            "document": {
+                "count": files.filter(file_type="document").count(),
+                "size": files.filter(file_type="document")
+                            .aggregate(s=Sum("file_size"))["s"] or 0
+            },
+            "image": {
+                "count": files.filter(file_type="image").count(),
+                "size": files.filter(file_type="image")
+                            .aggregate(s=Sum("file_size"))["s"] or 0
+            },
+            "video": {
+                "count": files.filter(file_type="video").count(),
+                "size": files.filter(file_type="video")
+                            .aggregate(s=Sum("file_size"))["s"] or 0
+            },
+            "other": {
+                "count": files.filter(file_type="other").count(),
+                "size": files.filter(file_type="other")
+                            .aggregate(s=Sum("file_size"))["s"] or 0
+            },
+        }
+
+        return JsonResponse({
+            "success": True,
+            "stats": stats
+        })
+    elif request.user.is_superuser:
+        return redirect('storageapp:admin_dashboard')
+    else:
+        return redirect('storageapp:dashboard')
+
+
+
+
+
+@login_required
+def org_download_file(request, file_id):
+    org_member = request.user.org_membership
+    org = request.user.org_membership.organization
+    if org_member and org and org_member.can_download and org_member.is_active and org.is_active:
+
+        file = CloudFile.objects.filter(
+            id=file_id,
+            organization=org,
+            is_deleted=False
+        ).distinct().first()
+
+        if not file:
+            raise Http404("File not accessible")
+
+        url = generate_presigned_url(
+            file.public_id,
+            download=True,
+            filename=file.file_name
+        )
+
+        return redirect(url)
+    elif request.user.is_superuser:
+        return redirect('storageapp:admin_dashboard')
+    else:
+        return redirect('storageapp:dashboard')
+
+
+@login_required
+def org_view_file(request, file_id):
+    org_member = request.user.org_membership
+    org = request.user.org_membership.organization
+    if org_member and org and org_member.can_view and org_member.is_active and org.is_active:
+        file = CloudFile.objects.filter(
+            id=file_id,
+            organization=org,
+            is_deleted=False
+        ).distinct().first()
+
+        if not file:
+            raise Http404("File not accessible")
+
+        # generate fresh temporary S3 link
+        url = generate_presigned_url(file.public_id)
+
+        return redirect(url)
     elif request.user.is_superuser:
         return redirect('storageapp:admin_dashboard')
     else:

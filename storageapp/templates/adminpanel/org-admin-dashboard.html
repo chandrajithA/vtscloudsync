@@ -30,14 +30,26 @@
 <div class="storage-cards admin-cards">
 
     <div class="card">
-        <h4>{% if request.user.org_membership %}{{request.user.org_membership.organization.short_name}} {% endif %}Total Users</h4>
+        <h4>{% if request.user.org_membership %}{{request.user.org_membership.organization.short_name}} {% endif %}Total Members</h4>
         <strong>{{ total_users|intcomma }}</strong>
         
     </div>
 
     <div class="card">
-        <h4>{% if request.user.org_membership %}{{request.user.org_membership.organization.short_name}} {% endif %}Active Users</h4>
+        <h4>{% if request.user.org_membership %}{{request.user.org_membership.organization.short_name}} {% endif %}Active Members</h4>
         <strong>{{ active_users|intcomma }}</strong>
+        
+    </div>
+
+    <div class="card">
+        <h4>Total Used Storage</h4>
+        <strong>{{ total_storage_used|filesizeformat }}</strong>
+        
+    </div>
+
+    <div class="card">
+        <h4>Total Uploaded Files</h4>
+        <strong>{{ total_files_count|intcomma }}</strong>
         
     </div>
 

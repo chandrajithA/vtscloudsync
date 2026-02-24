@@ -57,10 +57,10 @@
     {% if request.user.org_membership.is_admin %}
     <a href="{% url 'storageapp:org_admin_dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'org_admin_dashboard' %}active{% endif %}"><img src="{% static 'images/dashboard.png' %}" alt="">{{request.user.org_membership.organization.short_name}} Dashboard</a>
     {% endif %}
+    <a href="{% url 'storageapp:org_files' %}" class="nav-item {% if request.resolver_match.url_name == 'org_files' %}active{% endif %}"><img src="{% static 'images/enterprise.png' %}" alt=""> {{request.user.org_membership.organization.short_name}} Files</a>
     {% if request.user.org_membership.can_upload %}
     <a href="{% url 'storageapp:org_upload_page' %}" class="nav-item {% if request.resolver_match.url_name == 'org_upload_page' %}active{% endif %}"><img src="{% static 'images/upload.png' %}" alt=""> Upload in {{request.user.org_membership.organization.short_name}}</a>
     {% endif %}
-    <a href="{% url 'storageapp:org_files' %}" class="nav-item {% if request.resolver_match.url_name == 'org_files' %}active{% endif %}"><img src="{% static 'images/enterprise.png' %}" alt=""> {{request.user.org_membership.organization.short_name}} Files</a>
     {% if request.user.org_membership.is_admin %}
     {% comment %} <a href="" class="nav-item {% if request.resolver_match.url_name == 'org_trash' %}active{% endif %}"><img src="{% static 'images/trash.png' %}" alt="">{{request.user.org_membership.organization.short_name}} Trash</a> {% endcomment %}
     {% endif %}

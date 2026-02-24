@@ -67,7 +67,7 @@ class UserLoginActivityAdmin(admin.ModelAdmin):
 
 @admin.register(Organization)
 class OrganizationAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "short_name", "formatted_storage", "formatted_file_size", "created_at")
+    list_display = ("name", "short_name", "formatted_storage", "formatted_file_size", "created_at")
     search_fields = ("name", "short_name")
     ordering = ("-created_at",)
     readonly_fields = ("created_at",)
@@ -107,7 +107,6 @@ class OrganizationAdmin(admin.ModelAdmin):
 @admin.register(OrganizationMember)
 class OrganizationMemberAdmin(admin.ModelAdmin):
     list_display = (
-        "id",
         "user",
         "organization",
         "is_admin",
